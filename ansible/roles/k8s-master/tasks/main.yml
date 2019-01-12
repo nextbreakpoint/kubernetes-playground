@@ -1,0 +1,88 @@
+---
+- name: Ensure kubeadm initialization
+  become: yes
+#  command: 'kubeadm init --token 2f1a31.00f66dec74fd53f3 --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=172.42.42.10 | grep "kubeadm join" > /vagrant/join.sh'
+#  command: "kubeadm init --token 2f1a31.00f66dec74fd53f3 --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=172.42.42.10"
+  command: "kubeadm init --token 2f1a31.00f66dec74fd53f3 --pod-network-cidr=172.43.0.0/16 --apiserver-advertise-address=172.42.42.10"
+  tags:
+    - k8s
+
+#- name: Ensure join script is executable
+#  become: yes
+#  command: "chmod +x /vagrant/join.sh"
+
+- name: Copy config to /Vagrant for other VMs
+  become: yes
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /vagrant/admin.conf
+    owner: ubuntu
+    group: ubuntu
+    mode: 0600
+
+- name: Copy config to home directory
+  become: yes
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/ubuntu/admin.conf
+    owner: ubuntu
+    group: ubuntu
+    mode: 0600
+
+- name: Update Environment
+  become: yes
+  lineinfile:
+    path: /home/ubuntu/.bashrc
+    regexp: '^export KUBECONFIG='
+    line: 'export KUBECONFIG=/home/ubuntu/admin.conf'
+    state: present
+
+# - name: Set --proxy-mode flag in kube-proxy daemonset (workaround for https://github.com/kubernetes/kubernetes/issues/34101)
+#   become: yes
+#   shell: "kubectl --kubeconfig=/home/ubuntu/admin.conf -n kube-system get ds -l 'k8s-app==kube-proxy' -o json | jq '.items[0].spec.template.spec.containers[0].command |= .+ [\"--proxy-mode=userspace\"]' | kubectl --kubeconfig=/home/ubuntu/admin.conf apply -f - && kubectl --kubeconfig=/home/ubuntu/admin.conf -n kube-system delete pods -l 'k8s-app==kube-proxy'"
+#   register: proxy
+#   until: proxy.rc == 0
+#   retries: 60
+#   delay: 10
+#   tags:
+#     - k8s
+
+- name: Ensure Flannel network file
+  become: yes
+  get_url:
+      url: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+      dest: /kube-flannel.yml
+      mode: 0440
+
+- name: Ensure Calico network file
+  become: yes
+  get_url:
+      url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+      dest: /calico.yaml
+      mode: 0440
+
+- name: Ensure Calico RBAC file
+  become: yes
+  get_url:
+      url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+      dest: /rbac-kdd.yaml
+      mode: 0440
+
+- name: Ensure Calico CIDR
+  become: yes
+  replace:
+    path: /calico.yaml
+    regexp: '192.168.0.0\/16'
+    replace: '172.43.0.0/16'
+    backup: yes
+
+- name: Ensure Network Start Script
+  become: yes
+  copy:
+    src: files/{{ item }}
+    dest: /usr/local/bin/{{ item }}
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - "start-calico"

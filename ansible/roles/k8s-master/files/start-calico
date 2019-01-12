@@ -1,0 +1,4 @@
+#!/bin/bash
+
+kubectl create -f /rbac-kdd.yaml
+kubectl create -f /calico.yaml
