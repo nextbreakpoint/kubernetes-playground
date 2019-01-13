@@ -30,11 +30,11 @@ Vagrant.configure(2) do |config|
           inline: "PYTHONUNBUFFERED=1 ansible-playbook /vagrant/ansible/k8s-worker.yml -c local"
       end
       s.vm.provision :shell,
-        inline: "echo 'KUBELET_EXTRA_ARGS=--node-ip=172.42.42.#{i+10-1}' | sudo tee /etc/default/kubelet"
+        inline: "echo 'KUBELET_EXTRA_ARGS=--node-ip=192.168.1.#{i+10-1}' | sudo tee /etc/default/kubelet"
       s.vm.provision :shell,
         inline: $restart_kubelet
       s.vm.network "private_network",
-        ip: "172.42.42.#{i+10-1}",
+        ip: "192.168.1.#{i+10-1}",
         netmask: "255.255.255.0",
         auto_config: true,
         virtualbox__intnet: "k8s-net"
