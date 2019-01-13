@@ -36,8 +36,8 @@ Vagrant.configure(2) do |config|
       s.vm.network "private_network",
         ip: "192.168.1.#{i+10-1}",
         netmask: "255.255.255.0",
-        auto_config: true,
-        virtualbox__intnet: "k8s-net"
+        auto_config: true
+        #virtualbox__intnet: "k8s-net"
       s.vm.provider "virtualbox" do |v|
         v.name = "k8s#{i}"
         v.cpus = 2
