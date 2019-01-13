@@ -2,4 +2,4 @@
 
 export KUBECONFIG=/etc/ubuntu/admin.conf
 
-kubectl --kubeconfig=/home/ubuntu/admin.conf -n kube-system describe secret $(kubectl --kubeconfig=/home/ubuntu/admin.conf -n kube-system get secret | grep admin-user | awk '{print $1}')
+kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')

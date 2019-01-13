@@ -141,6 +141,7 @@
     - "kubeadm-hash"
     - "kubeadm-token"
     - "taint-nodes"
+    - "start-tiller"
 
 - name: Ensure Kube directory
   become: yes
