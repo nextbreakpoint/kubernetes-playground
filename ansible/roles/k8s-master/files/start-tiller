@@ -1,0 +1,7 @@
+#!/bin/bash
+
+export KUBECONFIG=/etc/ubuntu/admin.conf 
+
+helm init --service-account tiller
+helm version
+helm repo update

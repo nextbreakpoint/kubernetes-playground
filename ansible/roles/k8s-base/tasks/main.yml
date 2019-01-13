@@ -45,6 +45,23 @@
     - { ip: "172.42.42.20", name: "k8s2" }
     - { ip: "172.42.42.30", name: "k8s3" }
 
+- name: Ensure Docker Apt Key
+  become: yes
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  tags:
+    - k8s
+
+- name: Ensure Docker Repository
+  become: yes
+  apt_repository:
+    repo: 'deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable'
+    state: present
+    update_cache: yes
+  tags:
+    - k8s
+
 - name: Ensure Google Cloud Apt Key
   become: yes
   apt_key:
@@ -65,7 +82,7 @@
 - name: Ensure Base Kubernetes
   become: yes
   apt:
-    name: ['apt-transport-https', 'docker-engine', 'kubelet', 'kubeadm', 'kubectl', 'kubernetes-cni', 'jq']
+    name: ['curl', 'apt-transport-https', 'docker-ce', 'kubelet', 'kubeadm', 'kubectl', 'kubernetes-cni', 'jq', 'bc', 'gawk']
     state: latest
   tags:
     - k8s
@@ -75,7 +92,7 @@
     name: docker
     state: present
 
-- name: Ensure User in Docker Group
+- name: Ensure User Ubuntu in Docker Group
   user:
     name=ubuntu
     groups=docker
@@ -85,6 +102,15 @@
   become:
   copy:
     src: files/clean-k8s
+    dest: /usr/local/bin
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Ensure Docker Socat
+  become:
+  copy:
+    src: files/docker-socat
     dest: /usr/local/bin
     mode: 0755
     owner: root

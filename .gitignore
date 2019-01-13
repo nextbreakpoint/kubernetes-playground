@@ -1,0 +1,4 @@
+.vagrant
+ubuntu-xenial-16.04-cloudimg-console.log
+k8s-master.retry
+k8s-worker.retry

@@ -1,15 +1,63 @@
 ---
+- name: Pull Docker images
+  become: yes
+  command: "kubeadm config images pull"
+  tags:
+    - k8s
+
 - name: Ensure kubeadm initialization
   become: yes
-#  command: 'kubeadm init --token 2f1a31.00f66dec74fd53f3 --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=172.42.42.10 | grep "kubeadm join" > /vagrant/join.sh'
-#  command: "kubeadm init --token 2f1a31.00f66dec74fd53f3 --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=172.42.42.10"
   command: "kubeadm init --token 2f1a31.00f66dec74fd53f3 --pod-network-cidr=172.43.0.0/16 --apiserver-advertise-address=172.42.42.10"
   tags:
     - k8s
 
-#- name: Ensure join script is executable
-#  become: yes
-#  command: "chmod +x /vagrant/join.sh"
+- name: Copy dashboard rbac config
+  become: yes
+  copy:
+    content: |
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: admin-user
+        namespace: kube-system
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: admin-user
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-admin
+      subjects:
+      - kind: ServiceAccount
+        name: admin-user
+        namespace: kube-system
+    dest: /tmp/dashboard-rbac-config.yaml
+
+- name: Copy tiller rbac config
+  become: yes
+  copy:
+    content: |
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: tiller
+        namespace: kube-system
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: tiller
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-admin
+      subjects:
+        - kind: ServiceAccount
+          name: tiller
+          namespace: kube-system
+    dest: /tmp/tiller-rbac-config.yaml
 
 - name: Copy config to /Vagrant for other VMs
   become: yes
@@ -47,36 +95,29 @@
 #   tags:
 #     - k8s
 
-- name: Ensure Flannel network file
-  become: yes
-  get_url:
-      url: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-      dest: /kube-flannel.yml
-      mode: 0440
-
 - name: Ensure Calico network file
   become: yes
   get_url:
-      url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-      dest: /calico.yaml
-      mode: 0440
+    url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+    dest: /tmp/calico.yaml
+    mode: 0444
 
 - name: Ensure Calico RBAC file
   become: yes
   get_url:
-      url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-      dest: /rbac-kdd.yaml
-      mode: 0440
+    url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
+    dest: /tmp/rbac-kdd.yaml
+    mode: 0444
 
 - name: Ensure Calico CIDR
   become: yes
   replace:
-    path: /calico.yaml
+    path: /tmp/calico.yaml
     regexp: '192.168.0.0\/16'
     replace: '172.43.0.0/16'
     backup: yes
 
-- name: Ensure Network Start Script
+- name: Ensure Network Start Scripts
   become: yes
   copy:
     src: files/{{ item }}
@@ -86,3 +127,122 @@
     mode: 0755
   with_items:
     - "start-calico"
+
+- name: Ensure Utility Scripts
+  become: yes
+  copy:
+    src: files/{{ item }}
+    dest: /usr/local/bin/{{ item }}
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - "dashboard-token"
+    - "kubeadm-hash"
+    - "kubeadm-token"
+    - "taint-nodes"
+
+- name: Ensure Kube directory
+  become: yes
+  file:
+    path: /home/ubuntu/.kube
+    state: directory
+
+- name: Copy config to Kube directory
+  become: yes
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/ubuntu/.kube/config
+    owner: ubuntu
+    group: ubuntu
+    mode: 0600
+
+- name: List Kubernetes nodes
+  become: yes
+  command: "kubectl --kubeconfig=/home/ubuntu/admin.conf get nodes"
+  register: nodes
+  tags:
+    - k8s
+- debug: var=nodes.stdout_lines
+
+- name: Ensure dashboard file
+  become: yes
+  get_url:
+    url: https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
+    dest: /tmp/kubernetes-dashboard.yaml
+    mode: 0444
+
+- name: Install dashboard rbac
+  become: yes
+  command: "kubectl --kubeconfig=/home/ubuntu/admin.conf apply -f /tmp/dashboard-rbac-config.yaml"
+  tags:
+    - k8s
+
+- name: Install tiller rbac
+  become: yes
+  command: "kubectl --kubeconfig=/home/ubuntu/admin.conf apply -f /tmp/tiller-rbac-config.yaml"
+  tags:
+    - k8s
+
+- name: Install dashboard service
+  become: yes
+  command: "kubectl --kubeconfig=/home/ubuntu/admin.conf apply -f /tmp/kubernetes-dashboard.yaml"
+  tags:
+    - k8s
+
+- name: Ensure Helm files
+  become: yes
+  get_url:
+    url: https://storage.googleapis.com/kubernetes-helm/helm-v2.12.1-linux-amd64.tar.gz
+    dest: /tmp/helm.tar.gz
+    mode: 0444
+
+- name: Create Helm directory
+  become: yes
+  file:
+    path: /tmp/helm
+    state: directory
+  tags:
+    - k8s
+
+- name: Decompress Helm files
+  become: yes
+  unarchive:
+    src: /tmp/helm.tar.gz
+    dest: /tmp/helm
+  tags:
+    - k8s
+
+- name: Install helm command
+  become: yes
+  command: "cp /tmp/helm/linux-amd64/helm /usr/local/bin"
+  tags:
+    - k8s
+
+- name: Install tiller command
+  become: yes
+  command: "cp /tmp/helm/linux-amd64/tiller /usr/local/bin"
+  tags:
+    - k8s
+
+- name: Ensure Metrics server files
+  become: yes
+  git:
+    repo: 'https://github.com/kubernetes-incubator/metrics-server.git'
+    dest: /tmp/metrics-server
+  tags:
+    - k8s
+
+- name: List Metrics server directory
+  become: yes
+  command: "ls -al /tmp/metrics-server"
+  register: lstmp
+  tags:
+    - k8s
+- debug: var=lstmp.stdout_lines
+
+- name: Install Metrics server
+  become: yes
+  command: "kubectl --kubeconfig=/home/ubuntu/admin.conf create -f /tmp/metrics-server/deploy/1.8+/"
+  tags:
+    - k8s
