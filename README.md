@@ -12,23 +12,21 @@ Verify that the nodes are running:
 
     vagrant status k8s1 k8s2 k8s3
 
-## Install CNI (required)
+## Connect to master node
 
 Open a shell on the master node:
 
     vagrant ssh k8s1
 
-Execute script to install Calico:
+## Install CNI (required)
+
+Execute script on master node:
 
     start-calico
 
 ## Verify nodes are ready
 
-Open a shell on the master node:
-
-    vagrant ssh k8s1
-
-Execute command to get pods:
+Execute command on master node:
 
     kubectl get nodes
 
@@ -39,21 +37,13 @@ Execute command to get pods:
 
 ## Install Tiller (optional, required for using Helm)
 
-Open a shell on the master node:
-
-    vagrant ssh k8s1
-
-Execute script to install Tiller:
+Execute script on master node:
 
     start-tiller
 
 ## Verify pods are running
 
-Open a shell on the master node:
-
-    vagrant ssh k8s1
-
-Execute command to get pods:
+Execute command on master node:
 
     kubectl get pods --all-namespaces
 
@@ -74,14 +64,34 @@ Execute command to get pods:
     kube-system   metrics-server-68d85f76bb-t7gks        1/1     Running   0          3h20m
     kube-system   tiller-deploy-8485766469-kr9t5         1/1     Running   0          75m
 
+## Get token for accessing Dashboard
+
+Execute script on master node:
+
+    dashboard-token
+
+Copy token from output.
+
+## Expose Dashboard on host
+
+Execute script on host:
+
+    kubectl --kubeconfig=admin.conf proxy
+
+Open browser at address:
+
+    http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/namespace/kube-system?namespace=kube-system
+
+Use token for login.
+
 ## Stop nodes
 
-Execute command:
+Execute command on host:
 
     vagrant halt
 
 ## Remove nodes
 
-Execute command:
+Execute command on host:
 
     vagrant destroy -f
