@@ -242,6 +242,15 @@
     - k8s
 - debug: var=lstmp.stdout_lines
 
+- name: Modify Metrics server deployment
+  become: yes
+  blockinfile:
+    dest: /tmp/metrics-server/deploy/1.8+/metrics-server-deployment.yaml
+    insertafter: 'imagePullPolicy: Always'
+    block: |8
+      'command: ["/metrics-server", "--kubelet-insecure-tls", "--kubelet-preferred-address-types=InternalIP"]'
+    backup: yes
+
 - name: Install Metrics server
   become: yes
   command: "kubectl --kubeconfig=/home/ubuntu/admin.conf create -f /tmp/metrics-server/deploy/1.8+/"
