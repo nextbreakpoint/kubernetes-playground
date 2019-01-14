@@ -73,3 +73,15 @@ Execute command to get pods:
     kube-system   kubernetes-dashboard-57df4db6b-82qxc   1/1     Running   0          3h20m
     kube-system   metrics-server-68d85f76bb-t7gks        1/1     Running   0          3h20m
     kube-system   tiller-deploy-8485766469-kr9t5         1/1     Running   0          75m
+
+## Stop nodes
+
+Execute command:
+
+    vagrant halt
+
+## Remove nodes
+
+Execute command:
+
+    vagrant destroy -f
