@@ -248,7 +248,7 @@
     dest: /tmp/metrics-server/deploy/1.8+/metrics-server-deployment.yaml
     insertafter: 'imagePullPolicy: Always'
     block: |8
-      'command: ["/metrics-server", "--kubelet-insecure-tls", "--kubelet-preferred-address-types=InternalIP"]'
+      command: ["/metrics-server", "--kubelet-insecure-tls", "--kubelet-preferred-address-types=InternalIP"]
     backup: yes
 
 - name: Install Metrics server
