@@ -33,7 +33,7 @@
       - kind: ServiceAccount
         name: admin-user
         namespace: kube-system
-    dest: /tmp/dashboard-rbac-config.yaml
+    dest: /var/tmp/dashboard-rbac-config.yaml
 
 - name: Copy tiller rbac config
   become: yes
@@ -57,7 +57,7 @@
         - kind: ServiceAccount
           name: tiller
           namespace: kube-system
-    dest: /tmp/tiller-rbac-config.yaml
+    dest: /var/tmp/tiller-rbac-config.yaml
 
 - name: Copy config to /Vagrant for other VMs
   become: yes
@@ -99,20 +99,20 @@
   become: yes
   get_url:
     url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
-    dest: /tmp/calico.yaml
+    dest: /var/tmp/calico.yaml
     mode: 0444
 
 - name: Ensure Calico RBAC file
   become: yes
   get_url:
     url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-    dest: /tmp/rbac-kdd.yaml
+    dest: /var/tmp/rbac-kdd.yaml
     mode: 0444
 
 - name: Ensure Calico CIDR
   become: yes
   replace:
-    path: /tmp/calico.yaml
+    path: /var/tmp/calico.yaml
     regexp: '192.168.0.0\/16'
     replace: '172.43.0.0/16'
     backup: yes
@@ -170,24 +170,24 @@
   become: yes
   get_url:
     url: https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
-    dest: /tmp/kubernetes-dashboard.yaml
+    dest: /var/tmp/kubernetes-dashboard.yaml
     mode: 0444
 
 - name: Install dashboard rbac
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /tmp/dashboard-rbac-config.yaml"
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/dashboard-rbac-config.yaml"
   tags:
     - k8s
 
 - name: Install tiller rbac
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /tmp/tiller-rbac-config.yaml"
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/tiller-rbac-config.yaml"
   tags:
     - k8s
 
 - name: Install dashboard service
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /tmp/kubernetes-dashboard.yaml"
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/kubernetes-dashboard.yaml"
   tags:
     - k8s
 
@@ -195,13 +195,13 @@
   become: yes
   get_url:
     url: https://storage.googleapis.com/kubernetes-helm/helm-v2.12.1-linux-amd64.tar.gz
-    dest: /tmp/helm.tar.gz
+    dest: /var/tmp/helm.tar.gz
     mode: 0444
 
 - name: Create Helm directory
   become: yes
   file:
-    path: /tmp/helm
+    path: /var/tmp/helm
     state: directory
   tags:
     - k8s
@@ -209,20 +209,20 @@
 - name: Decompress Helm files
   become: yes
   unarchive:
-    src: /tmp/helm.tar.gz
-    dest: /tmp/helm
+    src: /var/tmp/helm.tar.gz
+    dest: /var/tmp/helm
   tags:
     - k8s
 
 - name: Install helm command
   become: yes
-  command: "cp /tmp/helm/linux-amd64/helm /usr/local/bin"
+  command: "cp /var/tmp/helm/linux-amd64/helm /usr/local/bin"
   tags:
     - k8s
 
 - name: Install tiller command
   become: yes
-  command: "cp /tmp/helm/linux-amd64/tiller /usr/local/bin"
+  command: "cp /var/tmp/helm/linux-amd64/tiller /usr/local/bin"
   tags:
     - k8s
 
@@ -230,13 +230,13 @@
   become: yes
   git:
     repo: 'https://github.com/kubernetes-incubator/metrics-server.git'
-    dest: /tmp/metrics-server
+    dest: /var/tmp/metrics-server
   tags:
     - k8s
 
 - name: List Metrics server directory
   become: yes
-  command: "ls -al /tmp/metrics-server"
+  command: "ls -al /var/tmp/metrics-server"
   register: lstmp
   tags:
     - k8s
@@ -245,14 +245,14 @@
 - name: Modify Metrics server deployment
   become: yes
   blockinfile:
-    dest: /tmp/metrics-server/deploy/1.8+/metrics-server-deployment.yaml
+    dest: /var/tmp/metrics-server/deploy/1.8+/metrics-server-deployment.yaml
     insertafter: 'imagePullPolicy: Always'
-    block: "        command: [\"/metrics-server\", \"--kubelet-insecure-tls\", \"--kubelet-preferred-address-types=InternalIP\"]"
+    block: "        command: ['/metrics-server', '--kubelet-insecure-tls', '--kubelet-preferred-address-types=InternalIP']"
     backup: yes
 
 - name: Print Metrics server deployment
   become: yes
-  command: "cat /tmp/metrics-server/deploy/1.8+/metrics-server-deployment.yaml"
+  command: "cat /var/tmp/metrics-server/deploy/1.8+/metrics-server-deployment.yaml"
   register: cat
   tags:
     - k8s
@@ -260,6 +260,6 @@
 
 - name: Install Metrics server
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf create -f /tmp/metrics-server/deploy/1.8+/"
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf create -f /var/tmp/metrics-server/deploy/1.8+/"
   tags:
     - k8s
