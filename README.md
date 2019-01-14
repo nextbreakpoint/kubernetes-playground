@@ -20,7 +20,7 @@ Open a shell on the master node:
 
 Execute script to install Calico:
 
-    sudo start-calico
+    start-calico
 
 ## Verify nodes are ready
 
@@ -45,7 +45,7 @@ Open a shell on the master node:
 
 Execute script to install Tiller:
 
-    sudo start-tiller
+    start-tiller
 
 ## Verify pods are running
 
