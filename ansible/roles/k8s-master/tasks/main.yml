@@ -72,7 +72,7 @@
   become: yes
   copy:
     src: /etc/kubernetes/admin.conf
-    dest: /home/vagrant/admin.conf
+    dest: /home/ubuntu/admin.conf
     owner: ubuntu
     group: ubuntu
     mode: 0600
@@ -80,14 +80,14 @@
 - name: Update Environment
   become: yes
   lineinfile:
-    path: /home/vagrant/.bashrc
+    path: /home/ubuntu/.bashrc
     regexp: '^export KUBECONFIG='
-    line: 'export KUBECONFIG=/home/vagrant/admin.conf'
+    line: 'export KUBECONFIG=/home/ubuntu/admin.conf'
     state: present
 
 # - name: Set --proxy-mode flag in kube-proxy daemonset (workaround for https://github.com/kubernetes/kubernetes/issues/34101)
 #   become: yes
-#   shell: "kubectl --kubeconfig=/home/vagrant/admin.conf -n kube-system get ds -l 'k8s-app==kube-proxy' -o json | jq '.items[0].spec.template.spec.containers[0].command |= .+ [\"--proxy-mode=userspace\"]' | kubectl --kubeconfig=/home/vagrant/admin.conf apply -f - && kubectl --kubeconfig=/home/vagrant/admin.conf -n kube-system delete pods -l 'k8s-app==kube-proxy'"
+#   shell: "kubectl --kubeconfig=/home/ubuntu/admin.conf -n kube-system get ds -l 'k8s-app==kube-proxy' -o json | jq '.items[0].spec.template.spec.containers[0].command |= .+ [\"--proxy-mode=userspace\"]' | kubectl --kubeconfig=/home/ubuntu/admin.conf apply -f - && kubectl --kubeconfig=/home/ubuntu/admin.conf -n kube-system delete pods -l 'k8s-app==kube-proxy'"
 #   register: proxy
 #   until: proxy.rc == 0
 #   retries: 60
@@ -146,21 +146,21 @@
 - name: Ensure Kube directory
   become: yes
   file:
-    path: /home/vagrant/.kube
+    path: /home/ubuntu/.kube
     state: directory
 
 - name: Copy config to Kube directory
   become: yes
   copy:
     src: /etc/kubernetes/admin.conf
-    dest: /home/vagrant/.kube/config
+    dest: /home/ubuntu/.kube/config
     owner: ubuntu
     group: ubuntu
     mode: 0600
 
 - name: List Kubernetes nodes
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf get nodes"
+  command: "kubectl --kubeconfig=/home/ubuntu/admin.conf get nodes"
   register: nodes
   tags:
     - k8s
@@ -175,19 +175,19 @@
 
 - name: Install dashboard rbac
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/dashboard-rbac-config.yaml"
+  command: "kubectl --kubeconfig=/home/ubuntu/admin.conf apply -f /var/tmp/dashboard-rbac-config.yaml"
   tags:
     - k8s
 
 - name: Install tiller rbac
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/tiller-rbac-config.yaml"
+  command: "kubectl --kubeconfig=/home/ubuntu/admin.conf apply -f /var/tmp/tiller-rbac-config.yaml"
   tags:
     - k8s
 
 - name: Install dashboard service
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/kubernetes-dashboard.yaml"
+  command: "kubectl --kubeconfig=/home/ubuntu/admin.conf apply -f /var/tmp/kubernetes-dashboard.yaml"
   tags:
     - k8s
 
@@ -260,6 +260,6 @@
 
 - name: Install Metrics server
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf create -f /var/tmp/metrics-server/deploy/1.8+/"
+  command: "kubectl --kubeconfig=/home/ubuntu/admin.conf create -f /var/tmp/metrics-server/deploy/1.8+/"
   tags:
     - k8s

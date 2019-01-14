@@ -2,7 +2,7 @@
 - name: Ensure SSH Directories
   become: yes
   file:
-    path: /home/vagrant/.ssh
+    path: /home/ubuntu/.ssh
     state: directory
     owner: ubuntu
     group: ubuntu
@@ -12,7 +12,7 @@
   become: yes
   copy:
     src: files/{{ item }}
-    dest: /home/vagrant/.ssh/{{ item }}
+    dest: /home/ubuntu/.ssh/{{ item }}
     owner: ubuntu
     group: ubuntu
     mode: 0600
@@ -25,7 +25,7 @@
   become: yes
   authorized_key:
     user: ubuntu
-    key:  "{{ lookup('file', '/home/vagrant/.ssh/id_rsa.pub') }}"
+    key:  "{{ lookup('file', '/home/ubuntu/.ssh/id_rsa.pub') }}"
     state: present
 
 - name: Remove Default Host Entry
