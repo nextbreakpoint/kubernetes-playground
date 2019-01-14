@@ -3,17 +3,17 @@
   become: yes
   copy:
     src: /vagrant/admin.conf
-    dest: /home/ubuntu/admin.conf
-    owner: ubuntu
-    group: ubuntu
+    dest: /home/vagrant/admin.conf
+    owner: vagrant
+    group: vagrant
     mode: 0600
 
 - name: Update Environment
   become: yes
   lineinfile:
-    path: /home/ubuntu/.bashrc
+    path: /home/vagrant/.bashrc
     regexp: '^export KUBECONFIG='
-    line: 'export KUBECONFIG=/home/ubuntu/admin.conf'
+    line: 'export KUBECONFIG=/home/vagrant/admin.conf'
     state: present
 
 - name: Join Kubernetes Cluster

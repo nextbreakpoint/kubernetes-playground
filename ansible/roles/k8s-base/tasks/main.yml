@@ -1,33 +1,4 @@
 ---
-- name: Ensure SSH Directories
-  become: yes
-  file:
-    path: /home/ubuntu/.ssh
-    state: directory
-    owner: ubuntu
-    group: ubuntu
-    mode: 0700
-
-- name: Copy SSH Key Files
-  become: yes
-  copy:
-    src: files/{{ item }}
-    dest: /home/ubuntu/.ssh/{{ item }}
-    owner: ubuntu
-    group: ubuntu
-    mode: 0600
-  with_items:
-    - id_rsa
-    - id_rsa.pub
-    - config
-
-- name: Ensure Authorized SSH Key
-  become: yes
-  authorized_key:
-    user: ubuntu
-    key:  "{{ lookup('file', '/home/ubuntu/.ssh/id_rsa.pub') }}"
-    state: present
-
 - name: Remove Default Host Entry
   become: yes
   lineinfile:
@@ -92,9 +63,9 @@
     name: docker
     state: present
 
-- name: Ensure User Ubuntu in Docker Group
+- name: Ensure User in Docker Group
   user:
-    name=ubuntu
+    name=vagrant
     groups=docker
     append=yes
 
