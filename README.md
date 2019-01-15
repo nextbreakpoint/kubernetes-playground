@@ -84,6 +84,14 @@ Open browser at address:
 
 Use token for login.
 
+## Enable pods scheduling on Master node (optional)
+
+Execute script on master node:
+
+    taint-nodes
+
+This will allow pods to run on master node.
+
 ## Stop nodes
 
 Execute command on host:
