@@ -103,3 +103,8 @@ Execute command on host:
 Execute command on host:
 
     vagrant destroy -f
+
+## Credits
+
+Large part of the code has been inspired by this project:
+https://github.com/davidkbainbridge/k8s-playground/graphs/contributors
