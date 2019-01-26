@@ -3,7 +3,7 @@
   become: yes
   lineinfile:
     dest: /etc/hosts
-    regexp: '^127\.0\.0|1\.1\s+k8s.*$'
+    regexp: '^127\.0\.1\.1\s+k8s.*$'
     state: absent
 
 - name: Ensure Hosts File
