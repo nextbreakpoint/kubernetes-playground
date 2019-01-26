@@ -3,7 +3,7 @@
   become: yes
   lineinfile:
     dest: /etc/hosts
-    regexp: '^127\.0\.0\.1\s+k8s.*$'
+    regexp: '^127\.0\.0|1\.1\s+k8s.*$'
     state: absent
 
 - name: Ensure Hosts File
@@ -97,3 +97,12 @@
     dest: /etc/fstab
     regexp: 'swap'
     state: absent
+
+- name: Update system
+  become: yes
+  apt:
+    upgrade: yes
+    update_cache: yes
+    cache_valid_time: 86400 #One day
+  tags:
+    - k8s

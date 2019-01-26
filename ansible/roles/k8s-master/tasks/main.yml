@@ -7,7 +7,7 @@
 
 - name: Ensure kubeadm initialization
   become: yes
-  command: "kubeadm init --token 2f1a31.00f66dec74fd53f3 --pod-network-cidr=172.43.0.0/16 --apiserver-advertise-address=192.168.1.10"
+  command: "kubeadm init --pod-network-cidr=172.43.0.0/16 --apiserver-advertise-address=192.168.1.10"
   tags:
     - k8s
 
@@ -85,16 +85,6 @@
     line: 'export KUBECONFIG=/home/vagrant/admin.conf'
     state: present
 
-# - name: Set --proxy-mode flag in kube-proxy daemonset (workaround for https://github.com/kubernetes/kubernetes/issues/34101)
-#   become: yes
-#   shell: "kubectl --kubeconfig=/home/vagrant/admin.conf -n kube-system get ds -l 'k8s-app==kube-proxy' -o json | jq '.items[0].spec.template.spec.containers[0].command |= .+ [\"--proxy-mode=userspace\"]' | kubectl --kubeconfig=/home/vagrant/admin.conf apply -f - && kubectl --kubeconfig=/home/vagrant/admin.conf -n kube-system delete pods -l 'k8s-app==kube-proxy'"
-#   register: proxy
-#   until: proxy.rc == 0
-#   retries: 60
-#   delay: 10
-#   tags:
-#     - k8s
-
 - name: Ensure Calico network file
   become: yes
   get_url:
@@ -142,6 +132,7 @@
     - "kubeadm-token"
     - "taint-nodes"
     - "start-tiller"
+    - "create-join-script"
 
 - name: Ensure Kube directory
   become: yes
@@ -263,3 +254,18 @@
   command: "kubectl --kubeconfig=/home/vagrant/admin.conf create -f /var/tmp/metrics-server/deploy/1.8+/"
   tags:
     - k8s
+
+- name: Create join script
+  become: yes
+  command: "create-join-script"
+  tags:
+    - k8s
+
+- name: Copy join script
+  become: yes
+  copy:
+    src: /home/vagrant/join.sh
+    dest: /vagrant/join.sh
+    owner: vagrant
+    group: vagrant
+    mode: 0600
