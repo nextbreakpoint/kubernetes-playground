@@ -2,6 +2,14 @@
 
 Vagrant scripts for creating a local Kubernetes cluster with one master node and two worker nodes.
 
+## Install plugins (optional)
+
+Install the vagrant-disksize plugin:
+
+    vagrant plugin install vagrant-disksize
+
+If the plugin is installed, the size of the root disk can be adjusted (default is 20Gb).
+
 ## Create nodes
 
 Install Vagrant and run:
@@ -40,6 +48,44 @@ Execute command on master node:
 Execute script on master node:
 
     start-tiller
+
+## Create the default Storage Class
+
+Execute script on master node:
+
+    create-standard-storageclass
+
+A Storage Class is required in order to create Persistent Volumes on the cluster nodes.
+
+A Persistent Volume configuration looks like:
+
+    apiVersion: v1
+    kind: PersistentVolume
+    metadata:
+      name: local-pv-k8s1-1
+    spec:
+      capacity:
+        storage: 5Gi
+      accessModes:
+      - ReadWriteOnce
+      persistentVolumeReclaimPolicy: Retain
+      storageClassName: standard
+      local:
+        path: /var/tmp/disk1
+      nodeAffinity:
+        required:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+              - k8s1
+
+Create the volume with the command:
+
+    kubectl create -f pv-k8s1-1.yaml
+
+A persistent volume will be created on the cluster node k8s1 when a pod will request a volume with a Persistent Volume Claim.
 
 ## Verify pods are running
 

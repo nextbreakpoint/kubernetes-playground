@@ -59,6 +59,18 @@
           namespace: kube-system
     dest: /var/tmp/tiller-rbac-config.yaml
 
+- name: Copy StorageClass config
+  become: yes
+  copy:
+    content: |
+      kind: StorageClass
+      apiVersion: storage.k8s.io/v1
+      metadata:
+        name: standard
+      provisioner: kubernetes.io/no-provisioner
+      volumeBindingMode: WaitForFirstConsumer
+    dest: /var/tmp/storageclass-config.yaml
+
 - name: Copy config to /Vagrant for other VMs
   become: yes
   copy:
@@ -132,6 +144,7 @@
     - "kubeadm-token"
     - "taint-nodes"
     - "start-tiller"
+    - "create-standard-storageclass"
     - "create-join-script"
 
 - name: Ensure Kube directory

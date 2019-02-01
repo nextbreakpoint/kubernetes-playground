@@ -14,6 +14,9 @@ sudo systemctl restart kubelet
 SHELL
 
 Vagrant.configure(2) do |config|
+  if Vagrant.has_plugin?("vagrant-disksize")
+    config.disksize.size = '20GB'
+  end
 
   (1..3).each do |i|
     config.vm.define "k8s#{i}" do |s|
