@@ -153,4 +153,5 @@ Execute command on host:
 ## Credits
 
 Part of the Vagrant and Ansible scripts have been inspired by:
+
 https://github.com/davidkbainbridge/k8s-playground/graphs/contributors
