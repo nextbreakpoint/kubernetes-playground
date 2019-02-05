@@ -154,4 +154,4 @@ Execute command on host:
 
 Part of the Vagrant and Ansible scripts have been inspired by:
 
-https://github.com/davidkbainbridge/k8s-playground/graphs/contributors
+https://github.com/davidkbainbridge/k8s-playground
