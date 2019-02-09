@@ -5,6 +5,8 @@
     dest: /etc/hosts
     regexp: '^127\.0\.1\.1\s+k8s.*$'
     state: absent
+  tags:
+    - k8s
 
 - name: Ensure Hosts File
   become: yes
@@ -15,6 +17,8 @@
     - { ip: "192.168.1.10", name: "k8s1" }
     - { ip: "192.168.1.20", name: "k8s2" }
     - { ip: "192.168.1.30", name: "k8s3" }
+  tags:
+    - k8s
 
 - name: Ensure Docker Apt Key
   become: yes
@@ -50,11 +54,47 @@
   tags:
     - k8s
 
-- name: Ensure Base Kubernetes
+- name: Ensure Base Tools
   become: yes
   apt:
-    name: ['curl', 'apt-transport-https', 'docker-ce', 'kubelet', 'kubeadm', 'kubectl', 'kubernetes-cni', 'jq', 'bc', 'gawk']
-    state: latest
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - curl
+    - jq
+    - bc
+    - gawk
+    - apt-transport-https
+  tags:
+    - k8s
+
+- name: Update system
+  become: yes
+  apt:
+    upgrade: yes
+    update_cache: yes
+    cache_valid_time: 86400 #One day
+  tags:
+    - k8s
+
+- name: Ensure Docker
+  become: yes
+  apt:
+    name: docker-ce=17.12.1~ce-0~ubuntu
+  tags:
+    - k8s
+
+- name: Ensure kubelet
+  become: yes
+  apt:
+    name: kubelet=1.11.2-00
+  tags:
+    - k8s
+
+- name: Ensure kubeadm
+  become: yes
+  apt:
+    name: kubeadm=1.11.2-00
   tags:
     - k8s
 
@@ -62,12 +102,16 @@
   group:
     name: docker
     state: present
+  tags:
+    - k8s
 
 - name: Ensure User in Docker Group
   user:
     name=vagrant
     groups=docker
     append=yes
+  tags:
+    - k8s
 
 - name: Ensure Kubernetes Cleanup
   become:
@@ -77,6 +121,8 @@
     mode: 0755
     owner: root
     group: root
+  tags:
+    - k8s
 
 - name: Ensure Docker Socat
   become:
@@ -86,10 +132,14 @@
     mode: 0755
     owner: root
     group: root
+  tags:
+    - k8s
 
 - name: Ensure swap is off
   become: yes
   command: "swapoff -a"
+  tags:
+    - k8s
 
 - name: Remove swap from fstab
   become: yes
@@ -97,12 +147,5 @@
     dest: /etc/fstab
     regexp: 'swap'
     state: absent
-
-- name: Update system
-  become: yes
-  apt:
-    upgrade: yes
-    update_cache: yes
-    cache_valid_time: 86400 #One day
   tags:
     - k8s

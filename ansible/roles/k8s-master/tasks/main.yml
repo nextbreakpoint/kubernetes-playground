@@ -34,6 +34,8 @@
         name: admin-user
         namespace: kube-system
     dest: /var/tmp/dashboard-rbac-config.yaml
+  tags:
+    - k8s
 
 - name: Copy tiller rbac config
   become: yes
@@ -58,6 +60,8 @@
           name: tiller
           namespace: kube-system
     dest: /var/tmp/tiller-rbac-config.yaml
+  tags:
+    - k8s
 
 - name: Copy StorageClass config
   become: yes
@@ -70,6 +74,8 @@
       provisioner: kubernetes.io/no-provisioner
       volumeBindingMode: WaitForFirstConsumer
     dest: /var/tmp/storageclass-config.yaml
+  tags:
+    - k8s
 
 - name: Copy config to /Vagrant for other VMs
   become: yes
@@ -79,6 +85,8 @@
     owner: vagrant
     group: vagrant
     mode: 0600
+  tags:
+    - k8s
 
 - name: Copy config to home directory
   become: yes
@@ -88,6 +96,8 @@
     owner: vagrant
     group: vagrant
     mode: 0600
+  tags:
+    - k8s
 
 - name: Update Environment
   become: yes
@@ -96,6 +106,8 @@
     regexp: '^export KUBECONFIG='
     line: 'export KUBECONFIG=/home/vagrant/admin.conf'
     state: present
+  tags:
+    - k8s
 
 - name: Ensure Calico network file
   become: yes
@@ -103,6 +115,8 @@
     url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
     dest: /var/tmp/calico.yaml
     mode: 0444
+  tags:
+    - k8s
 
 - name: Ensure Calico RBAC file
   become: yes
@@ -110,6 +124,8 @@
     url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
     dest: /var/tmp/rbac-kdd.yaml
     mode: 0444
+  tags:
+    - k8s
 
 - name: Ensure Calico CIDR
   become: yes
@@ -118,6 +134,8 @@
     regexp: '192.168.0.0\/16'
     replace: '172.43.0.0/16'
     backup: yes
+  tags:
+    - k8s
 
 - name: Ensure Network Start Scripts
   become: yes
@@ -129,6 +147,8 @@
     mode: 0755
   with_items:
     - "start-calico"
+  tags:
+    - k8s
 
 - name: Ensure Utility Scripts
   become: yes
@@ -146,12 +166,16 @@
     - "start-tiller"
     - "create-standard-storageclass"
     - "create-join-script"
+  tags:
+    - k8s
 
 - name: Ensure Kube directory
   become: yes
   file:
     path: /home/vagrant/.kube
     state: directory
+  tags:
+    - k8s
 
 - name: Copy config to Kube directory
   become: yes
@@ -161,6 +185,8 @@
     owner: vagrant
     group: vagrant
     mode: 0600
+  tags:
+    - k8s
 
 - name: List Kubernetes nodes
   become: yes
@@ -176,6 +202,8 @@
     url: https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
     dest: /var/tmp/kubernetes-dashboard.yaml
     mode: 0444
+  tags:
+    - k8s
 
 - name: Install dashboard rbac
   become: yes
@@ -201,6 +229,8 @@
     url: https://storage.googleapis.com/kubernetes-helm/helm-v2.12.1-linux-amd64.tar.gz
     dest: /var/tmp/helm.tar.gz
     mode: 0444
+  tags:
+    - k8s
 
 - name: Create Helm directory
   become: yes
@@ -253,6 +283,8 @@
     insertafter: 'imagePullPolicy: Always'
     block: "        command: ['/metrics-server', '--kubelet-insecure-tls', '--kubelet-preferred-address-types=InternalIP']"
     backup: yes
+  tags:
+    - k8s
 
 - name: Print Metrics server deployment
   become: yes
@@ -282,3 +314,5 @@
     owner: vagrant
     group: vagrant
     mode: 0600
+  tags:
+    - k8s

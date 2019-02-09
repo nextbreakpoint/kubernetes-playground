@@ -7,6 +7,8 @@
     owner: vagrant
     group: vagrant
     mode: 0600
+  tags:
+    - k8s
 
 - name: Update Environment
   become: yes
@@ -15,6 +17,8 @@
     regexp: '^export KUBECONFIG='
     line: 'export KUBECONFIG=/home/vagrant/admin.conf'
     state: present
+  tags:
+    - k8s
 
 - name: Copy join script
   become: yes
@@ -24,7 +28,11 @@
     owner: vagrant
     group: vagrant
     mode: 0700
+  tags:
+    - k8s
 
 - name: Join Kubernetes Cluster
   become: yes
   command: "sh /home/vagrant/join.sh"
+  tags:
+    - k8s
