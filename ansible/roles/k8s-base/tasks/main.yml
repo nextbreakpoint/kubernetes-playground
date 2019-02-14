@@ -80,21 +80,21 @@
 - name: Ensure Docker
   become: yes
   apt:
-    name: docker-ce=17.12.1~ce-0~ubuntu
+    name: docker-ce=18.06.2~ce~3-0~ubuntu
   tags:
     - k8s
 
 - name: Ensure kubelet
   become: yes
   apt:
-    name: kubelet=1.11.2-00
+    name: kubelet=1.12.5-00
   tags:
     - k8s
 
 - name: Ensure kubeadm
   become: yes
   apt:
-    name: kubeadm=1.11.2-00
+    name: kubeadm=1.12.5-00
   tags:
     - k8s
 
