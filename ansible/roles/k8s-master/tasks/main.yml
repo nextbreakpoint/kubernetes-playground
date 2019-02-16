@@ -165,6 +165,7 @@
     - "taint-nodes"
     - "start-tiller"
     - "create-standard-storageclass"
+    - "install-docker-registry"
     - "create-join-script"
   tags:
     - k8s
@@ -317,10 +318,140 @@
   tags:
     - k8s
 
-- name: Create Docker Registry directory
+- name: Create Docker Registry data directory
   become: yes
   file:
-    path: /var/tmp/docker-registry
+    path: /var/tmp/docker-registry/data
     state: directory
+  tags:
+    - k8s
+
+- name: Create Docker Registry certs directory
+  become: yes
+  file:
+    path: /var/tmp/docker-registry/certs
+    state: directory
+  tags:
+    - k8s
+
+- name: Create Docker Registry auth directory
+  become: yes
+  file:
+    path: /var/tmp/docker-registry/auth
+    state: directory
+  tags:
+    - k8s
+
+- name: Copy Docker Registry files
+  become: yes
+  copy:
+    content: |
+      ---
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: local-pv-claim-k8s1-docker-registry
+        labels:
+          app: registry
+      spec:
+        storageClassName: standard
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+        selector:
+            matchLabels:
+              app: registry
+      ---
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: registry
+        labels:
+          app: registry
+      spec:
+        containers:
+        - name: registry
+          image: registry:2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - mountPath: /var/lib/registry
+              subPath: data
+              name: registry-data
+            - mountPath: /etc/certs
+              subPath: certs
+              name: registry-data
+            - mountPath: /etc/auth
+              subPath: auth
+              name: registry-data
+          env:
+            - name: REGISTRY_HTTP_ADDR
+              value: "0.0.0.0:5000"
+            - name: REGISTRY_HTTP_TLS_CERTIFICATE
+              value: "/etc/certs/docker-registry.crt"
+            - name: REGISTRY_HTTP_TLS_KEY
+              value: "/etc/certs/docker-registry.key"
+            - name: REGISTRY_AUTH
+              value: "htpasswd"
+            - name: REGISTRY_AUTH_HTPASSWD_REALM
+              value: "Registry Realm"
+            - name: REGISTRY_AUTH_HTPASSWD_PATH
+              value: "/etc/auth/htpasswd"
+        volumes:
+          - name: registry-data
+            persistentVolumeClaim:
+              claimName: local-pv-claim-k8s1-docker-registry
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: In
+                  values:
+                  - k8s1
+      ---
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: registry
+        labels:
+          app: registry
+      spec:
+        selector:
+          app: registry
+        ports:
+          - port: 5000
+            targetPort: 5000
+            nodePort: 30500
+        type: NodePort
+      ---
+      apiVersion: v1
+      kind: PersistentVolume
+      metadata:
+        name: local-pv-k8s1-docker-registry
+        labels:
+          app: registry
+      spec:
+        capacity:
+          storage: 5Gi
+        accessModes:
+        - ReadWriteOnce
+        persistentVolumeReclaimPolicy: Retain
+        storageClassName: standard
+        local:
+          path: /var/tmp/docker-registry
+        nodeAffinity:
+          required:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - k8s1
+    dest: /var/tmp/docker-registry.yaml
   tags:
     - k8s

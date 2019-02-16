@@ -4,3 +4,4 @@ k8s-master.retry
 k8s-worker.retry
 admin.conf
 join.sh
+docker-registry.crt

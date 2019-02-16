@@ -1,92 +1,27 @@
 #!/bin/bash
 
-cat <<EOF >/var/tmp/docker-registry.yaml
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: local-pv-claim-k8s1-docker-registry
-  labels:
-    app: registry
-spec:
-  storageClassName: standard
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
-  selector:
-      matchLabels:
-        app: registry
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: registry
-  labels:
-    app: registry
-spec:
-  containers:
-  - name: registry
-    image: registry:2
-    imagePullPolicy: Always
-    ports:
-      - containerPort: 5000
-    volumeMounts:
-      - mountPath: /var/lib/registry
-        name: registry-data
-  volumes:
-    - name: registry-data
-      persistentVolumeClaim:
-        claimName: local-pv-claim-k8s1-docker-registry
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-        - matchExpressions:
-          - key: kubernetes.io/hostname
-            operator: In
-            values:
-            - k8s1
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: registry
-  labels:
-    app: registry
-spec:
-  selector:
-    app: registry
-  ports:
-    - port: 5000
-      targetPort: 5000
-      nodePort: 30500
-  type: NodePort
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: local-pv-k8s1-docker-registry
-  labels:
-    app: registry
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-  - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: standard
-  local:
-    path: /var/tmp/docker-registry
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - k8s1
+cat <<EOF >/var/tmp/ssl.conf
+[req]
+distinguished_name = distinguished_name_req
+[distinguished_name_req]
+[v3_ca]
+subjectAltName = IP:192.168.1.10
 EOF
+
+openssl req -config /var/tmp/ssl.conf -extensions v3_ca -newkey rsa:4096 -nodes -sha256 -keyout /var/tmp/docker-registry.key -x509 -days 365 -subj "/CN=192.168.1.10" -out /var/tmp/docker-registry.crt
+
+openssl x509  -text -in /var/tmp/docker-registry.crt
+
+docker run --rm --entrypoint htpasswd registry:2 -Bbn test password > /tmp/htpasswd
+
+sudo cp /tmp/htpasswd /var/tmp/docker-registry/auth/htpasswd
+
+sudo mkdir -p /etc/docker/certs.d/192.168.1.10:5000
+
+sudo cp /var/tmp/docker-registry.crt /etc/docker/certs.d/192.168.1.10:5000/ca.crt
+
+cp /var/tmp/docker-registry.crt /vagrant
+
+cp /var/tmp/docker-registry.* /var/tmp/docker-registry/certs
 
 kubectl create -f /var/tmp/docker-registry.yaml
