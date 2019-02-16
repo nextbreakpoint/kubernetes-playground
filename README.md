@@ -4,9 +4,9 @@ Create a standalone Kubernetes cluster with one master node and two worker nodes
 
 ## Before you start
 
-Download and install Vagrant. I am using version 2.2.2.
+Download and install Vagrant. I am using version 2.2.3.
 
-Download and install VirtualBox (with extension pack). I am using version 6.0.0.
+Download and install VirtualBox (with extension pack). I am using version 6.0.4.
 
 I tested my scripts on Mac, but the process should be the same on Linux. Not sure about Windows.
 
@@ -152,6 +152,4 @@ Execute command on host:
 
 ## Credits
 
-Part of the Vagrant and Ansible scripts have been inspired by:
-
-https://github.com/davidkbainbridge/k8s-playground
+Vagrant and Ansible scripts have been inspired by: https://github.com/davidkbainbridge/k8s-playground
