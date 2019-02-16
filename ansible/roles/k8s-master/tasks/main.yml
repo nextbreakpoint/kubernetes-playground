@@ -316,3 +316,11 @@
     mode: 0600
   tags:
     - k8s
+
+- name: Create Docker Registry directory
+  become: yes
+  file:
+    path: /var/tmp/docker-registry
+    state: directory
+  tags:
+    - k8s
