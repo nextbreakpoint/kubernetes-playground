@@ -59,7 +59,7 @@ Execute script on master node:
 
 Execute script on master node:
 
-    create-standard-storageclass
+    create-storage-class
 
 A Storage Class is required in order to create Persistent Volumes which live on cluster nodes.
 
@@ -150,6 +150,30 @@ Execute command on host:
 
     vagrant destroy -f
 
-## Credits
+## Create local Docker Registry
 
-Vagrant and Ansible scripts have been inspired by: https://github.com/davidkbainbridge/k8s-playground
+Execute script on master node:
+
+    docker-registry-create
+
+## Delete local Docker Registry
+
+Execute script on master node:
+
+    docker-registry-delete
+
+## Push images to local Docker Registry
+
+Add the self-signed certificate docker-registry.crt to your trusted CA list.
+
+    // Linux
+    cp docker-registry.crt /etc/docker/certs.d/192.168.1.10:30000/ca.crt
+
+    // MacOS
+    sudo security add-trusted-cert -d -r trustRoot -k /Users/$USER/Library/Keychains/login.keychain docker-registry.crt
+
+Execute commands:
+
+    docker -t <image>:<version> 192.168.1.10:30000/<image>:<version>
+    docker login --username test --password password 192.168.1.10:30000
+    docker push 192.168.1.10:30000/<image>:<version>

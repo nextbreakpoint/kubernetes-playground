@@ -36,3 +36,13 @@
   command: "sh /home/vagrant/join.sh"
   tags:
     - k8s
+
+- name: Copy Docker Registry Self-signed Certificate
+  become: yes
+  shell: |
+      mkdir -p /etc/docker/certs.d/192.168.1.10:30000
+      cp /vagrant/docker-registry.crt /etc/docker/certs.d/192.168.1.10:30000/ca.crt
+  args:
+    executable: /bin/bash
+  tags:
+    - k8s

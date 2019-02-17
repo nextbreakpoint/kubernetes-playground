@@ -164,9 +164,10 @@
     - "kubeadm-token"
     - "taint-nodes"
     - "start-tiller"
-    - "create-standard-storageclass"
-    - "install-docker-registry"
+    - "create-storage-class"
     - "create-join-script"
+    - "docker-registry-create"
+    - "docker-registry-delete"
   tags:
     - k8s
 
@@ -426,7 +427,7 @@
         ports:
           - port: 5000
             targetPort: 5000
-            nodePort: 30500
+            nodePort: 30000
         type: NodePort
       ---
       apiVersion: v1
@@ -453,5 +454,51 @@
                 values:
                 - k8s1
     dest: /var/tmp/docker-registry.yaml
+  tags:
+    - k8s
+
+- name: Create SSL config for Docker Registry
+  become: yes
+  copy:
+    content: |
+      [req]
+      distinguished_name = distinguished_name_req
+      [distinguished_name_req]
+      [v3_ca]
+      subjectAltName = IP:192.168.1.10
+    dest: /var/tmp/docker-registry-ssl.conf
+  tags:
+    - k8s
+
+- name: Generate Docker Registry Self-signed Certificate
+  become: yes
+  shell: |
+      openssl req -config /var/tmp/docker-registry-ssl.conf -extensions v3_ca -newkey rsa:4096 -nodes -sha256 -keyout /var/tmp/docker-registry.key -x509 -days 365 -subj "/CN=192.168.1.10" -out /var/tmp/docker-registry.crt
+      openssl x509 -text -in /var/tmp/docker-registry.crt
+      mkdir -p /etc/docker/certs.d/192.168.1.10:30000
+      cp /var/tmp/docker-registry.crt /etc/docker/certs.d/192.168.1.10:30000/ca.crt
+      mv /var/tmp/docker-registry.crt /var/tmp/docker-registry/certs
+      mv /var/tmp/docker-registry.key /var/tmp/docker-registry/certs
+  args:
+    executable: /bin/bash
+  tags:
+    - k8s
+
+- name: Generate Docker Registry authentication config
+  become: yes
+  shell: |
+      docker run --rm --entrypoint htpasswd registry:2 -Bbn test password > /var/tmp/htpasswd
+      mv /var/tmp/htpasswd /var/tmp/docker-registry/auth/htpasswd
+  args:
+    executable: /bin/bash
+  tags:
+    - k8s
+
+- name: Copy Docker Registry Self-signed Certificate
+  become: yes
+  shell: |
+      cp /var/tmp/docker-registry/certs/docker-registry.crt /vagrant
+  args:
+    executable: /bin/bash
   tags:
     - k8s

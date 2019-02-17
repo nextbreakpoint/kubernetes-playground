@@ -1,0 +1,3 @@
+#!/bin/bash
+
+kubectl create -f /var/tmp/docker-registry.yaml
