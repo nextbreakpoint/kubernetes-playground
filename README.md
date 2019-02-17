@@ -172,7 +172,7 @@ Add the self-signed certificate docker-registry.crt to your trusted CA list.
     // MacOS
     sudo security add-trusted-cert -d -r trustRoot -k /Users/$USER/Library/Keychains/login.keychain docker-registry.crt
 
-Execute commands:
+Push Docker image from host with commands:
 
     docker -t <image>:<version> 192.168.1.10:30000/<image>:<version>
     docker login --username test --password password 192.168.1.10:30000
