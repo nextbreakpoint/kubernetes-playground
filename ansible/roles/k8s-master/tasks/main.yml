@@ -7,7 +7,7 @@
 
 - name: Ensure kubeadm initialization
   become: yes
-  command: "kubeadm init --pod-network-cidr=172.43.0.0/16 --apiserver-advertise-address=192.168.1.10"
+  command: "kubeadm init --pod-network-cidr=172.43.0.0/16 --apiserver-advertise-address=192.168.1.11"
   tags:
     - k8s
 
@@ -375,7 +375,7 @@
         containers:
         - name: registry
           image: registry:2
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
           volumeMounts:
@@ -465,7 +465,7 @@
       distinguished_name = distinguished_name_req
       [distinguished_name_req]
       [v3_ca]
-      subjectAltName = IP:192.168.1.10
+      subjectAltName = IP:192.168.1.11
     dest: /var/tmp/docker-registry-ssl.conf
   tags:
     - k8s
@@ -473,10 +473,10 @@
 - name: Generate Docker Registry Self-signed Certificate
   become: yes
   shell: |
-      openssl req -config /var/tmp/docker-registry-ssl.conf -extensions v3_ca -newkey rsa:4096 -nodes -sha256 -keyout /var/tmp/docker-registry.key -x509 -days 365 -subj "/CN=192.168.1.10" -out /var/tmp/docker-registry.crt
+      openssl req -config /var/tmp/docker-registry-ssl.conf -extensions v3_ca -newkey rsa:4096 -nodes -sha256 -keyout /var/tmp/docker-registry.key -x509 -days 365 -subj "/CN=192.168.1.11" -out /var/tmp/docker-registry.crt
       openssl x509 -text -in /var/tmp/docker-registry.crt
-      mkdir -p /etc/docker/certs.d/192.168.1.10:30000
-      cp /var/tmp/docker-registry.crt /etc/docker/certs.d/192.168.1.10:30000/ca.crt
+      mkdir -p /etc/docker/certs.d/192.168.1.11:30000
+      cp /var/tmp/docker-registry.crt /etc/docker/certs.d/192.168.1.11:30000/ca.crt
       mv /var/tmp/docker-registry.crt /var/tmp/docker-registry/certs
       mv /var/tmp/docker-registry.key /var/tmp/docker-registry/certs
   args:

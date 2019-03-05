@@ -1,0 +1,22 @@
+{{- $fullname := include "kafka.fullname" . -}}
+{{- $name := include "kafka.name" . -}}
+{{- $root := . }}
+{{ range .Values.nodes }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ $fullname }}-pvc-k8s{{ . }}
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  selector:
+      matchLabels:
+        app: {{ $name }}
+        release: {{ $root.Release.Name }}
+        node: k8s{{ . }}
+    {{ end }}

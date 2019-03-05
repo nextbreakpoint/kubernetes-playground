@@ -1,0 +1,103 @@
+{{- $fullname := include "zookeeper.fullname" . -}}
+{{- $name := include "zookeeper.name" . -}}
+{{- $chart := include "zookeeper.chart" . -}}
+{{- $root := . }}
+{{ range .Values.nodes }}
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ $fullname }}-k8s{{ . }}
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+      release: {{ $root.Release.Name }}
+      node: k8s{{ . }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        release: {{ $root.Release.Name }}
+        node: k8s{{ . }}
+    spec:
+      containers:
+        - name: {{ $root.Chart.Name }}
+          image: "{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+          ports:
+            - name: client
+              containerPort: 2181
+              protocol: TCP
+            - name: leader
+              containerPort: 3888
+              protocol: TCP
+            - name: peer
+              containerPort: 2888
+              protocol: TCP
+            - name: metrics
+              containerPort: 7070
+              protocol: TCP
+          # livenessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          # readinessProbe:
+          #   httpGet:
+          #     path: /
+          #     port: http
+          volumeMounts:
+            - mountPath: /var/tmp/datalog
+              subPath: datalog
+              name: zookeeper-data
+            - mountPath: /var/tmp/data
+              subPath: data
+              name: zookeeper-data
+            - mountPath: "/etc/zookeeper_jaas.conf"
+              subPath: jaasconfig
+              name: zookeeper-jaas-config
+              readOnly: true
+          env:
+            - name: ZOO_MY_ID
+              value: "{{ . }}"
+            - name: ZOO_SERVERS
+              value: "server.1={{ if eq . "1" }}{{ "0.0.0.0" }}{{ else }}{{ $fullname }}-k8s1{{ end }}:2888:3888 server.2={{ if eq . "2" }}{{ "0.0.0.0" }}{{ else }}{{ $fullname }}-k8s2{{ end }}:2888:3888 server.3={{ if eq . "3" }}{{ "0.0.0.0" }}{{ else }}{{ $fullname }}-k8s3{{ end }}:2888:3888"
+            - name: ZOO_ENABLE_QUORUM_SASL
+              value: "true"
+            - name: ZOO_ENABLE_CLIENT_SASL
+              value: "true"
+            - name: ZOO_DATA_LOG_DIR
+              value: "/var/tmp/datalog"
+            - name: ZOO_DATA_DIR
+              value: "/var/tmp/data"
+            - name: JVMFLAGS
+              value: "{{ $root.Values.environment.jvmFlags }}"
+            - name: NEXTBREAKPOINT_JAAS_CONFIG
+              value: "/etc/zookeeper_jaas.conf"
+          resources:
+{{ toYaml $root.Values.resources | indent 12 }}
+      imagePullSecrets:
+        - name: regcred
+      volumes:
+        - name: zookeeper-data
+          persistentVolumeClaim:
+            claimName: {{ $fullname }}-pvc-k8s{{ . }}
+        - name: zookeeper-jaas-config
+          secret:
+            secretName: {{ $fullname }}-jaas-config
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                  - k8s{{ . }}
+    {{ end }}

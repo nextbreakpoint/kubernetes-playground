@@ -14,9 +14,9 @@
     dest: /etc/hosts
     line: "{{ item.ip }} {{ item.name }}"
   with_items:
-    - { ip: "192.168.1.10", name: "k8s1" }
-    - { ip: "192.168.1.20", name: "k8s2" }
-    - { ip: "192.168.1.30", name: "k8s3" }
+    - { ip: "192.168.1.11", name: "k8s1" }
+    - { ip: "192.168.1.12", name: "k8s2" }
+    - { ip: "192.168.1.13", name: "k8s3" }
   tags:
     - k8s
 

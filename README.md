@@ -167,13 +167,19 @@ Execute script on master node:
 Add the self-signed certificate docker-registry.crt to your trusted CA list.
 
     // Linux
-    cp docker-registry.crt /etc/docker/certs.d/192.168.1.10:30000/ca.crt
+    cp docker-registry.crt /etc/docker/certs.d/192.168.1.11:30000/ca.crt
 
     // MacOS
     sudo security add-trusted-cert -d -r trustRoot -k /Users/$USER/Library/Keychains/login.keychain docker-registry.crt
 
 Push Docker image from host with commands:
 
-    docker -t <image>:<version> 192.168.1.10:30000/<image>:<version>
-    docker login --username test --password password 192.168.1.10:30000
-    docker push 192.168.1.10:30000/<image>:<version>
+    docker -t <image>:<version> 192.168.1.11:30000/<image>:<version>
+    docker login --username test --password password 192.168.1.11:30000
+    docker push 192.168.1.11:30000/<image>:<version>
+
+## Create Pull Secrets for local Docker Registry
+
+Create secrets for pulling images from local Docker Registry:
+
+    kubectl create secret docker-registry regcred --docker-server=192.168.1.11:30000 --docker-username=test --docker-password=password --docker-email=<your-email>
