@@ -4,7 +4,7 @@
 
 image:
   repository: 192.168.1.11:30000/nextbreakpoint/zookeeper
-  tag: latest
+  tag: 3.4.12
   pullPolicy: IfNotPresent
 
 service:

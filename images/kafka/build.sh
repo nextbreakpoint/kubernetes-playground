@@ -1,0 +1,3 @@
+!#/bin/sh
+
+docker build -t 192.168.1.11:30000/nextbreakpoint/cp-kafka:5.0.1 --build-arg cp_kafka_version=5.0.1 .

@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 image:
-  repository: 192.168.1.11:30000/confluentinc/cp-kafka
+  repository: 192.168.1.11:30000/nextbreakpoint/cp-kafka
   tag: 5.0.1
   pullPolicy: IfNotPresent
 
