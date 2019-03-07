@@ -97,7 +97,7 @@ elif [ "$1" = "jobmanager" ]; then
     echo "query.server.port: 6125" >> "$FLINK_HOME/conf/flink-conf.yaml"
 
     echo "config file: " && grep '^[^\n#]' "$FLINK_HOME/conf/flink-conf.yaml"
-    bash "$FLINK_HOME/bin/jobmanager.sh" start-foreground cluster
+    bash "$FLINK_HOME/bin/jobmanager.sh" start-foreground ${JOB_MANAGER_RPC_ADDRESS}
     exit 0
 elif [ "$1" = "taskmanager" ]; then
     if [ -z "$TASK_MANAGER_NUMBER_OF_TASK_SLOTS" ]; then
