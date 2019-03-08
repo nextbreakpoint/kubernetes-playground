@@ -1,0 +1,31 @@
+{{- $fullname := include "kafka.fullname" . -}}
+{{- $name := include "kafka.name" . -}}
+{{- $root := . }}
+{{ range .Values.nodes }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $fullname }}-pv-k8s{{ . }}
+  labels:
+    app: {{ $name }}
+    release: {{ $root.Release.Name }}
+    node: k8s{{ . }}
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  local:
+    path: /var/tmp/kafka
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - k8s{{ . }}
+    {{ end }}

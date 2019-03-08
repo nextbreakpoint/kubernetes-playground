@@ -1,0 +1,86 @@
+{{- $fullname := include "kafka.fullname" . -}}
+{{- $name := include "kafka.name" . -}}
+{{- $chart := include "kafka.chart" . -}}
+{{- $root := . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-headless
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+spec:
+  clusterIP: None
+  ports:
+    - port: 9092
+      targetPort: broker
+      protocol: TCP
+      name: kafka
+    - port: 7070
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: {{ $name }}
+    release: {{ $root.Release.Name }}
+{{ range .Values.nodes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-k8s{{ . }}
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+    external: "false"
+    node: k8s{{.}}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9092
+      targetPort: broker
+      protocol: TCP
+      name: kafka
+    - port: 7070
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: {{ $name }}
+    release: {{ $root.Release.Name }}
+    node: k8s{{ . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-k8s{{ . }}-external
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+    external: "true"
+    node: k8s{{.}}
+spec:
+  type: NodePort
+  ports:
+    - port: 9092
+      nodePort: {{ add $root.Values.service.firstExternalBrokerPort . }}
+      targetPort: broker-external
+      protocol: TCP
+      name: kafka
+    - port: 7070
+      nodePort: {{ add $root.Values.service.firstExternalMetricsPort . }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: {{ $name }}
+    release: {{ $root.Release.Name }}
+    node: k8s{{ . }}
+    {{ end }}

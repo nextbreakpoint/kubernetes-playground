@@ -1,0 +1,40 @@
+{{- $name := include "kafka.name" . -}}
+
+*** Use Kafka service from container running in host ***
+
+Connect to Kafka service by running these commands:
+
+  export ZOOKEEPER_PORT=$(kubectl get services -l app={{ .Values.zookeeper.app }},node=k8s1,external=true -o jsonpath="{.items[0].spec.ports[0].nodePort}")
+  export KAFKA_PORT=$(kubectl get services -l app={{ $name }},node=k8s1,external=true -o jsonpath="{.items[0].spec.ports[0].nodePort}")
+  export NODE_IP=$(kubectl get nodes -l kubernetes.io/hostname=k8s1 -o jsonpath="{.items[0].status.addresses[0].address}")
+  docker run --rm -it confluentinc/cp-kafka:5.0.1 kafka-topics --list --zookeeper $NODE_IP:$ZOOKEEPER_PORT
+
+Produce messages into Kafka topic by running these commands:
+
+  docker run --rm -it confluentinc/cp-kafka:5.0.1 kafka-console-producer --broker-list $NODE_IP:$KAFKA_PORT --topic test
+
+Consume messages from Kafka topic by running these commands:
+
+  docker run --rm -it confluentinc/cp-kafka:5.0.1 kafka-console-consumer --bootstrap-server $NODE_IP:$KAFKA_PORT --topic test --from-beginning
+
+
+*** Use Kafka service from pod running in same cluster ***
+
+Connect to Kafka service by running these commands:
+
+  kubectl run test --rm -it --restart=Never --image=confluentinc/cp-kafka:5.0.1 -- kafka-topics --list --zookeeper {{ .Values.zookeeper.name }}:{{ .Values.zookeeper.port }}
+
+Produce messages into Kafka topic by running these commands:
+
+  kubectl run test --rm -it --restart=Never --image=confluentinc/cp-kafka:5.0.1 -- kafka-console-producer --broker-list {{ $name }}-headless:9092 --topic test
+
+Consume messages from Kafka topic by running these commands:
+
+  kubectl run test --rm -it --restart=Never --image=confluentinc/cp-kafka:5.0.1 -- kafka-console-consumer --bootstrap-server {{ $name }}-headless:9092 --topic test --from-beginning
+
+
+*** Retrieve information about the service ***
+
+Tail logs of Kafka service by running these commands:
+
+  kubectl logs -f $(kubectl get pods -l node=k8s1,app={{ $name }} -o jsonpath="{.items[0].metadata.name}")

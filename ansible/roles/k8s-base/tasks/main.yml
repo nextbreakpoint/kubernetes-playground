@@ -14,9 +14,9 @@
     dest: /etc/hosts
     line: "{{ item.ip }} {{ item.name }}"
   with_items:
-    - { ip: "192.168.1.10", name: "k8s1" }
-    - { ip: "192.168.1.20", name: "k8s2" }
-    - { ip: "192.168.1.30", name: "k8s3" }
+    - { ip: "192.168.1.11", name: "k8s1" }
+    - { ip: "192.168.1.12", name: "k8s2" }
+    - { ip: "192.168.1.13", name: "k8s3" }
   tags:
     - k8s
 
@@ -147,5 +147,18 @@
     dest: /etc/fstab
     regexp: 'swap'
     state: absent
+  tags:
+    - k8s
+
+- name: Create playground directories
+  become: yes
+  file:
+    path: "{{ item.path }}"
+    state: directory
+  with_items:
+    - { path: "/var/tmp/kafka" }
+    - { path: "/var/tmp/zookeeper" }
+    - { path: "/var/tmp/flink/jobmanager" }
+    - { path: "/var/tmp/flink/taskmanager" }
   tags:
     - k8s

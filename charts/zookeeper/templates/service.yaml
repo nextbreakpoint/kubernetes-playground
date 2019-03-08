@@ -1,0 +1,105 @@
+{{- $fullname := include "zookeeper.fullname" . -}}
+{{- $name := include "zookeeper.name" . -}}
+{{- $chart := include "zookeeper.chart" . -}}
+{{- $root := . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-headless
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+spec:
+  clusterIP: None
+  ports:
+    - port: 2181
+      protocol: TCP
+      name: client
+    - port: 3888
+      protocol: TCP
+      name: leader
+    - port: 2888
+      protocol: TCP
+      name: peer
+  selector:
+    app: {{ $name }}
+    release: {{ $root.Release.Name }}
+{{ range .Values.nodes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-k8s{{ . }}
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+    external: "false"
+    node: k8s{{.}}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 2181
+      targetPort: client
+      protocol: TCP
+      name: client
+    - port: 3888
+      targetPort: leader
+      protocol: TCP
+      name: leader
+    - port: 2888
+      targetPort: peer
+      protocol: TCP
+      name: peer
+    - port: 7070
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: {{ $name }}
+    release: {{ $root.Release.Name }}
+    node: k8s{{ . }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $fullname }}-k8s{{ . }}-external
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+    external: "true"
+    node: k8s{{.}}
+spec:
+  type: NodePort
+  ports:
+    - port: 2181
+      nodePort: {{ add $root.Values.service.firstExternalClientPort . }}
+      targetPort: client
+      protocol: TCP
+      name: client
+    - port: 3888
+      nodePort: {{ add $root.Values.service.firstExternalLeaderPort . }}
+      targetPort: leader
+      protocol: TCP
+      name: leader
+    - port: 2888
+      nodePort: {{ add $root.Values.service.firstExternalPeerPort . }}
+      targetPort: peer
+      protocol: TCP
+      name: peer
+    - port: 7070
+      nodePort: {{ add $root.Values.service.firstExternalMetricsPort . }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: {{ $name }}
+    release: {{ $root.Release.Name }}
+    node: k8s{{ . }}
+    {{ end }}

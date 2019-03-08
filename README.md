@@ -2,6 +2,8 @@
 
 Create a standalone Kubernetes cluster with one master node and two worker nodes using Vagrant and Ansible.
 
+Learn how to create a private Docker Registry and how to deploy Kafka, Zookeeper and Flink using Helm charts.
+
 ## Before you start
 
 Download and install Vagrant. I am using version 2.2.3.
@@ -144,7 +146,13 @@ Execute command on host:
 
     vagrant halt
 
-## Remove nodes
+## Resume nodes
+
+Execute command on host:
+
+    vagrant up
+
+## Remove nodes (if not required anymore)
 
 Execute command on host:
 
@@ -167,13 +175,43 @@ Execute script on master node:
 Add the self-signed certificate docker-registry.crt to your trusted CA list.
 
     // Linux
-    cp docker-registry.crt /etc/docker/certs.d/192.168.1.10:30000/ca.crt
+    cp docker-registry.crt /etc/docker/certs.d/192.168.1.11:30000/ca.crt
 
-    // MacOS
+    // MacOS - Restart Docker for Mac after adding the certificate!!!
     sudo security add-trusted-cert -d -r trustRoot -k /Users/$USER/Library/Keychains/login.keychain docker-registry.crt
 
 Push Docker image from host with commands:
 
-    docker -t <image>:<version> 192.168.1.10:30000/<image>:<version>
-    docker login --username test --password password 192.168.1.10:30000
-    docker push 192.168.1.10:30000/<image>:<version>
+    docker -t <image>:<version> 192.168.1.11:30000/<image>:<version>
+    docker login --username test --password password 192.168.1.11:30000
+    docker push 192.168.1.11:30000/<image>:<version>
+
+## Create Pull Secrets for local Docker Registry
+
+Create secrets for pulling images from local Docker Registry:
+
+    kubectl create secret docker-registry regcred --docker-server=192.168.1.11:30000 --docker-username=test --docker-password=password --docker-email=<your-email>
+
+## Deploy Kafka, Zookeeper and Flink using Helm
+
+The directory charts contains Helm charts for Kafka, Zookeeper, and Flink.
+
+The charts depends on Docker images which must be created before installing the charts.
+
+Create Docker images for Kafka, Zookeeper, and Flink:
+
+    ./build-images.sh
+
+Install Kafka, Zookeeper, and Flink charts:
+
+    helm install --name zookeeper charts/zookeeper
+    helm install --name kafka charts/kafka
+    helm install --name flink charts/flink --set storage.create=true
+
+Delete Kafka, Zookeeper, and Flink charts:
+
+    helm delete --purge zookeeper
+    helm delete --purge kafka
+    helm delete --purge flink
+
+## Credits

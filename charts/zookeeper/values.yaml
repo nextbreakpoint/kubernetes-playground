@@ -1,0 +1,33 @@
+# Default values for zookeeper.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: 192.168.1.11:30000/nextbreakpoint/zookeeper
+  tag: 3.4.12
+  pullPolicy: IfNotPresent
+
+service:
+  firstExternalClientPort: 32100
+  firstExternalLeaderPort: 32130
+  firstExternalPeerPort: 32120
+  firstExternalMetricsPort: 32170
+
+resources:
+  limits:
+   cpu: 100m
+   memory: 300Mi
+  requests:
+   cpu: 100m
+   memory: 300Mi
+
+environment:
+  jvmFlags: "-Xms256M -Xmx256M"
+
+secrets:
+  password: "test"
+
+nodes:
+  - "1"
+  - "2"
+  - "3"
