@@ -2,6 +2,8 @@
 
 Create a standalone Kubernetes cluster with one master node and two worker nodes using Vagrant and Ansible.
 
+Learn how to create a private Docker Registry and how to deploy Kafka, Zookeeper and Flink using Helm charts.
+
 ## Before you start
 
 Download and install Vagrant. I am using version 2.2.3.
@@ -144,7 +146,13 @@ Execute command on host:
 
     vagrant halt
 
-## Remove nodes
+## Resume nodes
+
+Execute command on host:
+
+    vagrant up
+
+## Remove nodes (if not required anymore)
 
 Execute command on host:
 
