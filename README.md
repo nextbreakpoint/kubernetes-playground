@@ -177,7 +177,7 @@ Add the self-signed certificate docker-registry.crt to your trusted CA list.
     // Linux
     cp docker-registry.crt /etc/docker/certs.d/192.168.1.11:30000/ca.crt
 
-    // MacOS
+    // MacOS - Restart Docker for Mac after adding the certificate!!!
     sudo security add-trusted-cert -d -r trustRoot -k /Users/$USER/Library/Keychains/login.keychain docker-registry.crt
 
 Push Docker image from host with commands:
@@ -204,12 +204,14 @@ Create Docker images for Kafka, Zookeeper, and Flink:
 
 Install Kafka, Zookeeper, and Flink charts:
 
-    helm install -name zookeeper charts/zookeeper
-    helm install -name kafka charts/kafka
-    helm install -name flink charts/flink --set storage.create=true
+    helm install --name zookeeper charts/zookeeper
+    helm install --name kafka charts/kafka
+    helm install --name flink charts/flink --set storage.create=true
 
 Delete Kafka, Zookeeper, and Flink charts:
 
     helm delete --purge zookeeper
     helm delete --purge kafka
     helm delete --purge flink
+
+## Credits
