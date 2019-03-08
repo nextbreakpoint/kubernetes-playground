@@ -149,3 +149,16 @@
     state: absent
   tags:
     - k8s
+
+- name: Create playground directories
+  become: yes
+  file:
+    path: "{{ item.path }}"
+    state: directory
+  with_items:
+    - { path: "/var/tmp/kafka" }
+    - { path: "/var/tmp/zookeeper" }
+    - { path: "/var/tmp/flink/jobmanager" }
+    - { path: "/var/tmp/flink/taskmanager" }
+  tags:
+    - k8s
