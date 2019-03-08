@@ -1,0 +1,59 @@
+{{- $fullname := include "flink.fullname" . -}}
+{{- $name := include "flink.name" . -}}
+{{- $root := . }}
+{{ if $root.Values.storage.create }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $fullname }}-pv-jobmanager-k8s1
+  labels:
+    app: {{ $name }}
+    release: {{ $root.Release.Name }}
+    node: k8s1
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  local:
+    path: /var/tmp/flink/jobmanager
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - k8s1
+{{ range .Values.nodes }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $fullname }}-pv-taskmanager-k8s{{ . }}
+  labels:
+    app: {{ $name }}
+    release: {{ $root.Release.Name }}
+    node: k8s{{ . }}
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  local:
+    path: /var/tmp/flink/taskmanager
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - k8s{{ . }}
+    {{ end }}
+{{ end }}

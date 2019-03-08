@@ -51,17 +51,17 @@ fi
 
 if [ -z "$FLINK_GRAPHITE_HOST" ]; then
   echo "Graphite host not defined. Will use default value"
-  export FLINK_GRAPHITE_HOST=localhost
+  FLINK_GRAPHITE_HOST=localhost
 fi
 
 if [ -z "$FLINK_GRAPHITE_PORT" ]; then
   echo "Graphite port not defined. Will use default value"
-  export FLINK_GRAPHITE_PORT=2003
+  FLINK_GRAPHITE_PORT=2003
 fi
 
 if [ -z "$FLINK_GRAPHITE_PREFIX" ]; then
   echo "Graphite prefix not defined. Will use default value"
-  export FLINK_GRAPHITE_PREFIX="nextbreakpoint.flink.$FLINK_ENVIRONMENT"
+  FLINK_GRAPHITE_PREFIX="nextbreakpoint.flink.$FLINK_ENVIRONMENT"
 fi
 
 # If unspecified, the hostname of the container is taken as the JobManager address
@@ -101,7 +101,7 @@ elif [ "$1" = "jobmanager" ]; then
     exit 0
 elif [ "$1" = "taskmanager" ]; then
     if [ -z "$TASK_MANAGER_NUMBER_OF_TASK_SLOTS" ]; then
-      export TASK_MANAGER_NUMBER_OF_TASK_SLOTS=${TASK_MANAGER_NUMBER_OF_TASK_SLOTS:-$(grep -c ^processor /proc/cpuinfo)}
+      TASK_MANAGER_NUMBER_OF_TASK_SLOTS=${TASK_MANAGER_NUMBER_OF_TASK_SLOTS:-$(grep -c ^processor /proc/cpuinfo)}
     fi
 
     echo "jobmanager.rpc.address: ${JOB_MANAGER_RPC_ADDRESS}" >> "$FLINK_HOME/conf/flink-conf.yaml"

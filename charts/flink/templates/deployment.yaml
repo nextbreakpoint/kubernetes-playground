@@ -1,0 +1,185 @@
+{{- $fullname := include "flink.fullname" . -}}
+{{- $name := include "flink.name" . -}}
+{{- $chart := include "flink.chart" . -}}
+{{- $root := . }}
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: {{ $fullname }}-jobmanager
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $name }}
+      role: "jobmanager"
+      release: {{ $root.Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        role: "jobmanager"
+        release: {{ $root.Release.Name }}
+    spec:
+      containers:
+        - name: {{ $root.Chart.Name }}
+          image: "{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+          command:
+            - /custom_entrypoint.sh
+          args:
+            - jobmanager
+          ports:
+            - name: ui
+              containerPort: 8081
+              protocol: TCP
+            - name: rpc
+              containerPort: 6123
+              protocol: TCP
+            - name: blob
+              containerPort: 6124
+              protocol: TCP
+            - name: query
+              containerPort: 6125
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/tmp/data
+              subPath: data
+              name: flink
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: FLINK_ENVIRONMENT
+              value: {{ $root.Release.Name }}
+            - name: JOB_MANAGER_RPC_ADDRESS
+              value: {{ $fullname }}-jobmanager-headless
+          resources:
+{{ toYaml $root.Values.resources | indent 12 }}
+      imagePullSecrets:
+        - name: regcred
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ $name }}
+              - key: role
+                operator: In
+                values:
+                - jobmanager
+            topologyKey: "kubernetes.io/hostname"
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                  - k8s1
+  volumeClaimTemplates:
+    - metadata:
+        name: flink
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 2Gi
+        storageClassName: "standard"
+---
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: {{ $fullname }}-taskmanager
+  labels:
+    app: {{ $name }}
+    chart: {{ $chart }}
+    release: {{ $root.Release.Name }}
+    heritage: {{ $root.Release.Service }}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: {{ $name }}
+      role: "taskmanager"
+      release: {{ $root.Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ $name }}
+        role: "taskmanager"
+        release: {{ $root.Release.Name }}
+    spec:
+      containers:
+        - name: {{ $root.Chart.Name }}
+          image: "{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+          command:
+            - /custom_entrypoint.sh
+          args:
+            - taskmanager
+          ports:
+            - name: data
+              containerPort: 6121
+              protocol: TCP
+            - name: ipc
+              containerPort: 6122
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/tmp/data
+              subPath: data
+              name: flink
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: FLINK_ENVIRONMENT
+              value: {{ $root.Release.Name }}
+            - name: TASK_MANAGER_NUMBER_OF_TASK_SLOTS
+              value: "1"
+            - name: JOB_MANAGER_RPC_ADDRESS
+              value: {{ $fullname }}-jobmanager-headless
+          resources:
+{{ toYaml $root.Values.resources | indent 12 }}
+      imagePullSecrets:
+        - name: regcred
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ $name }}
+              - key: role
+                operator: In
+                values:
+                - taskmanager
+            topologyKey: "kubernetes.io/hostname"
+  volumeClaimTemplates:
+    - metadata:
+        name: flink
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 5Gi
+        storageClassName: "standard"

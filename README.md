@@ -183,3 +183,25 @@ Push Docker image from host with commands:
 Create secrets for pulling images from local Docker Registry:
 
     kubectl create secret docker-registry regcred --docker-server=192.168.1.11:30000 --docker-username=test --docker-password=password --docker-email=<your-email>
+
+## Deploy Kafka, Zookeeper and Flink using Helm
+
+The directory charts contains Helm charts for Kafka, Zookeeper, and Flink.
+
+The charts depends on Docker images which must be created before installing the charts.
+
+Create Docker images for Kafka, Zookeeper, and Flink:
+
+    ./build-images.sh
+
+Install Kafka, Zookeeper, and Flink charts:
+
+    helm install -name zookeeper charts/zookeeper
+    helm install -name kafka charts/kafka
+    helm install -name flink charts/flink --set storage.create=true
+
+Delete Kafka, Zookeeper, and Flink charts:
+
+    helm delete --purge zookeeper
+    helm delete --purge kafka
+    helm delete --purge flink
