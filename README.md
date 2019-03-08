@@ -215,3 +215,5 @@ Delete Kafka, Zookeeper, and Flink charts:
     helm delete --purge flink
 
 ## Credits
+
+https://github.com/davidkbainbridge/k8s-playground
