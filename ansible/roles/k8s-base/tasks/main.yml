@@ -156,8 +156,9 @@
     path: "{{ item.path }}"
     state: directory
   with_items:
-    - { path: "/var/tmp/kafka" }
-    - { path: "/var/tmp/zookeeper" }
+    - { path: "/var/tmp/kafka/kafka-logs" }
+    - { path: "/var/tmp/zookeeper/data" }
+    - { path: "/var/tmp/zookeeper/datalog" }
     - { path: "/var/tmp/flink/jobmanager" }
     - { path: "/var/tmp/flink/taskmanager" }
   tags:
