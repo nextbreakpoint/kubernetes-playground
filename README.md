@@ -206,13 +206,15 @@ Install Kafka, Zookeeper, and Flink charts:
 
     helm install --name zookeeper charts/zookeeper
     helm install --name kafka charts/kafka
-    helm install --name flink charts/flink --set storage.create=true
+    helm install --name flink-volumes charts/flink-volumes
+    helm install --name flink charts/flink
 
 Delete Kafka, Zookeeper, and Flink charts:
 
     helm delete --purge zookeeper
     helm delete --purge kafka
     helm delete --purge flink
+    helm delete --purge flink-volumes
 
 ## Credits
 
