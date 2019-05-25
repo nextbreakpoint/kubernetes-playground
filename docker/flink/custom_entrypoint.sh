@@ -50,12 +50,12 @@ if [ -z "$FLINK_FS_CHECKPOINTS_LOCATION" ]; then
 fi
 
 if [ -z "$FLINK_GRAPHITE_HOST" ]; then
-  echo "Graphite host not defined. Will use default value"
-  FLINK_GRAPHITE_HOST=localhost
+  echo "Graphite host not defined. Will use default value (graphite)"
+  FLINK_GRAPHITE_HOST=graphite
 fi
 
 if [ -z "$FLINK_GRAPHITE_PORT" ]; then
-  echo "Graphite port not defined. Will use default value"
+  echo "Graphite port not defined. Will use default value (2003)"
   FLINK_GRAPHITE_PORT=2003
 fi
 
