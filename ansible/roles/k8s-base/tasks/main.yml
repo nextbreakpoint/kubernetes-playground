@@ -87,14 +87,14 @@
 - name: Ensure kubelet
   become: yes
   apt:
-    name: kubelet=1.12.5-00
+    name: kubelet=1.15.0-00
   tags:
     - k8s
 
 - name: Ensure kubeadm
   become: yes
   apt:
-    name: kubeadm=1.12.5-00
+    name: kubeadm=1.15.0-00
   tags:
     - k8s
 
