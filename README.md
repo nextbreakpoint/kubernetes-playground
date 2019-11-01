@@ -77,7 +77,7 @@ A Persistent Volume configuration for creating a volume on node k8s1 looks like:
       accessModes:
       - ReadWriteOnce
       persistentVolumeReclaimPolicy: Retain
-      storageClassName: standard
+      storageClassName: hostpath
       local:
         path: /var/tmp/disk1
       nodeAffinity:
