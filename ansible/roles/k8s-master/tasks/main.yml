@@ -70,7 +70,7 @@
       kind: StorageClass
       apiVersion: storage.k8s.io/v1
       metadata:
-        name: standard
+        name: hostpath
       provisioner: kubernetes.io/no-provisioner
       volumeBindingMode: WaitForFirstConsumer
     dest: /var/tmp/storageclass-config.yaml
@@ -112,17 +112,8 @@
 - name: Ensure Calico network file
   become: yes
   get_url:
-    url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml
+    url: https://docs.projectcalico.org/v3.10/manifests/calico.yaml
     dest: /var/tmp/calico.yaml
-    mode: 0444
-  tags:
-    - k8s
-
-- name: Ensure Calico RBAC file
-  become: yes
-  get_url:
-    url: https://docs.projectcalico.org/v3.3/getting-started/kubernetes/installation/hosted/rbac-kdd.yaml
-    dest: /var/tmp/rbac-kdd.yaml
     mode: 0444
   tags:
     - k8s
@@ -201,7 +192,7 @@
 - name: Ensure dashboard file
   become: yes
   get_url:
-    url: https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml
+    url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml
     dest: /var/tmp/kubernetes-dashboard.yaml
     mode: 0444
   tags:
@@ -228,7 +219,7 @@
 - name: Ensure Helm files
   become: yes
   get_url:
-    url: https://storage.googleapis.com/kubernetes-helm/helm-v2.12.1-linux-amd64.tar.gz
+    url: https://get.helm.sh/helm-v2.15.2-linux-amd64.tar.gz
     dest: /var/tmp/helm.tar.gz
     mode: 0444
   tags:
@@ -285,6 +276,15 @@
     insertafter: 'imagePullPolicy: Always'
     block: "        command: ['/metrics-server', '--kubelet-insecure-tls', '--kubelet-preferred-address-types=InternalIP']"
     backup: yes
+  tags:
+    - k8s
+
+- name: Change runAsRoot in Metrics server deployment
+  become: yes
+  replace:
+      path: /var/tmp/metrics-server/deploy/1.8+/metrics-server-deployment.yaml
+      regexp: 'runAsNonRoot: true'
+      replace: 'runAsNonRoot: false'
   tags:
     - k8s
 
@@ -351,11 +351,11 @@
       apiVersion: v1
       kind: PersistentVolumeClaim
       metadata:
-        name: local-pv-claim-k8s1-docker-registry
+        name: pv-docker-registry
         labels:
           app: registry
       spec:
-        storageClassName: standard
+        storageClassName: hostpath
         accessModes:
           - ReadWriteOnce
         resources:
@@ -404,7 +404,7 @@
         volumes:
           - name: registry-data
             persistentVolumeClaim:
-              claimName: local-pv-claim-k8s1-docker-registry
+              claimName: pv-docker-registry
         affinity:
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
@@ -433,7 +433,7 @@
       apiVersion: v1
       kind: PersistentVolume
       metadata:
-        name: local-pv-k8s1-docker-registry
+        name: pv-docker-registry
         labels:
           app: registry
       spec:
@@ -442,7 +442,7 @@
         accessModes:
         - ReadWriteOnce
         persistentVolumeReclaimPolicy: Retain
-        storageClassName: standard
+        storageClassName: hostpath
         local:
           path: /var/tmp/docker-registry
         nodeAffinity:

@@ -70,31 +70,70 @@
 
 - name: Update system
   become: yes
-  apt:
-    upgrade: yes
-    update_cache: yes
-    cache_valid_time: 86400 #One day
+  command: "apt-get update -y"
   tags:
     - k8s
+
+- name: List docker-ce versions
+  become: yes
+  command: "apt-cache madison docker-ce"
+  register: dockerce
+  tags:
+    - k8s
+- debug: msg="{{ dockerce.stdout }}"
+
+- name: List docker-ce-cli versions
+  become: yes
+  command: "apt-cache madison docker-ce-cli"
+  register: dockercecli
+  tags:
+    - k8s
+- debug: msg="{{ dockercecli.stdout }}"
+
+- name: List containerd versions
+  become: yes
+  command: "apt-cache madison containerd.io"
+  register: containerd
+  tags:
+    - k8s
+- debug: msg="{{ containerd.stdout }}"
+
+- name: List kubelet versions
+  become: yes
+  command: "apt-cache madison kubelet"
+  register: kubelet
+  tags:
+    - k8s
+- debug: msg="{{ kubelet.stdout }}"
+
+- name: List kubeadm versions
+  become: yes
+  command: "apt-cache madison kubeadm"
+  register: kubeadm
+  tags:
+    - k8s
+- debug: msg="{{ kubeadm.stdout }}"
 
 - name: Ensure Docker
   become: yes
   apt:
-    name: docker-ce=18.06.2~ce~3-0~ubuntu
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - docker-ce=5:19.03.4~3-0~ubuntu-xenial
+    - docker-ce-cli=5:19.03.4~3-0~ubuntu-xenial
+    - containerd.io
   tags:
     - k8s
 
-- name: Ensure kubelet
+- name: Ensure Kubernetes
   become: yes
   apt:
-    name: kubelet=1.12.5-00
-  tags:
-    - k8s
-
-- name: Ensure kubeadm
-  become: yes
-  apt:
-    name: kubeadm=1.12.5-00
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - kubelet=1.16.2-00
+    - kubeadm=1.16.2-00
   tags:
     - k8s
 

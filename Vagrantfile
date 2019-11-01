@@ -15,7 +15,7 @@ SHELL
 
 Vagrant.configure(2) do |config|
   if Vagrant.has_plugin?("vagrant-disksize")
-    config.disksize.size = '20GB'
+    config.disksize.size = '40GB'
   end
 
   (1..3).each do |i|
