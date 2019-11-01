@@ -6,9 +6,9 @@ Learn how to create a private Docker Registry and how to deploy Kafka, Zookeeper
 
 ## Before you start
 
-Download and install Vagrant. I am using version 2.2.3.
+Download and install Vagrant. I am using version 2.2.6.
 
-Download and install VirtualBox (with extension pack). I am using version 6.0.4.
+Download and install VirtualBox (with extension pack). I am using version 6.0.14.
 
 I tested my scripts on Mac, but the process should be the same on Linux. Not sure about Windows.
 
@@ -47,9 +47,9 @@ Execute command on master node:
     kubectl get nodes
 
     NAME   STATUS   ROLES    AGE     VERSION
-    k8s1   Ready    master   3h20m   v1.13.2
-    k8s2   Ready    <none>   3h19m   v1.13.2
-    k8s3   Ready    <none>   3h17m   v1.13.2
+    k8s1   Ready    master   66m   v1.16.2
+    k8s2   Ready    <none>   60m   v1.16.2
+    k8s3   Ready    <none>   58m   v1.16.2
 
 ## Install Tiller (optional, required for using Helm)
 
@@ -101,22 +101,24 @@ Execute command on master node:
 
     kubectl get pods --all-namespaces
 
-    NAMESPACE     NAME                                   READY   STATUS    RESTARTS   AGE
-    kube-system   calico-node-65f2k                      2/2     Running   0          106m
-    kube-system   calico-node-c4z8r                      2/2     Running   0          106m
-    kube-system   calico-node-r54wn                      2/2     Running   0          106m
-    kube-system   coredns-86c58d9df4-dlcfs               1/1     Running   0          3h20m
-    kube-system   coredns-86c58d9df4-t5hbr               1/1     Running   0          3h20m
-    kube-system   etcd-k8s1                              1/1     Running   0          3h20m
-    kube-system   kube-apiserver-k8s1                    1/1     Running   0          3h20m
-    kube-system   kube-controller-manager-k8s1           1/1     Running   0          3h20m
-    kube-system   kube-proxy-5lbkn                       1/1     Running   0          3h17m
-    kube-system   kube-proxy-67lnb                       1/1     Running   0          3h19m
-    kube-system   kube-proxy-z8c7m                       1/1     Running   0          3h20m
-    kube-system   kube-scheduler-k8s1                    1/1     Running   0          3h20m
-    kube-system   kubernetes-dashboard-57df4db6b-82qxc   1/1     Running   0          3h20m
-    kube-system   metrics-server-68d85f76bb-t7gks        1/1     Running   0          3h20m
-    kube-system   tiller-deploy-8485766469-kr9t5         1/1     Running   0          75m
+    NAMESPACE              NAME                                         READY   STATUS    RESTARTS   AGE
+    kube-system            calico-kube-controllers-6d85fdfbd8-vj8h4     1/1     Running   0          54m
+    kube-system            calico-node-95lgg                            1/1     Running   0          54m
+    kube-system            calico-node-b4mww                            1/1     Running   0          54m
+    kube-system            calico-node-kmj9p                            1/1     Running   0          54m
+    kube-system            coredns-5644d7b6d9-hdjdn                     1/1     Running   0          63m
+    kube-system            coredns-5644d7b6d9-thlbt                     1/1     Running   0          63m
+    kube-system            etcd-k8s1                                    1/1     Running   0          62m
+    kube-system            kube-apiserver-k8s1                          1/1     Running   0          62m
+    kube-system            kube-controller-manager-k8s1                 1/1     Running   0          62m
+    kube-system            kube-proxy-ncn8b                             1/1     Running   0          56m
+    kube-system            kube-proxy-p5tnv                             1/1     Running   0          63m
+    kube-system            kube-proxy-pkf9w                             1/1     Running   0          58m
+    kube-system            kube-scheduler-k8s1                          1/1     Running   0          62m
+    kube-system            metrics-server-7777f7fc4c-bg72x              1/1     Running   0          21m
+    kube-system            tiller-deploy-684c9f98f5-wmdm8               1/1     Running   0          52m
+    kubernetes-dashboard   dashboard-metrics-scraper-566cddb686-q5n78   1/1     Running   0          63m
+    kubernetes-dashboard   kubernetes-dashboard-7b5bf5d559-tgvck        1/1     Running   0          63m
 
 ## Get token for accessing Dashboard
 
@@ -132,7 +134,7 @@ Execute script on host:
 
 Open browser at address and login using dashboard token:
 
-    http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/#!/namespace/kube-system?namespace=kube-system
+    http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/overview?namespace=default
 
 ## Enable pods scheduling on Master node (optional)
 
