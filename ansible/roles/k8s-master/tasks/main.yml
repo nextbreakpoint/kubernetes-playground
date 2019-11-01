@@ -355,7 +355,7 @@
         labels:
           app: registry
       spec:
-        storageClassName: standard
+        storageClassName: hostpath
         accessModes:
           - ReadWriteOnce
         resources:
@@ -442,7 +442,7 @@
         accessModes:
         - ReadWriteOnce
         persistentVolumeReclaimPolicy: Retain
-        storageClassName: standard
+        storageClassName: hostpath
         local:
           path: /var/tmp/docker-registry
         nodeAffinity:
