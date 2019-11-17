@@ -2,7 +2,7 @@
 {{- $name := include "flink.name" . -}}
 {{- $chart := include "flink.chart" . -}}
 {{- $root := . }}
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ $fullname }}-jobmanager
@@ -27,10 +27,8 @@ spec:
     spec:
       containers:
         - name: {{ $root.Chart.Name }}
-          image: "{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
+          image: "{{ $root.Values.image.registry }}{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
           imagePullPolicy: {{ $root.Values.image.pullPolicy }}
-          command:
-            - /custom_entrypoint.sh
           args:
             - jobmanager
           ports:
@@ -48,7 +46,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - mountPath: /var/tmp/data
-              subPath: data
+              subPath: flink/jobmanager
               name: flink
           env:
             - name: POD_NAME
@@ -63,8 +61,9 @@ spec:
               value: {{ $root.Release.Name }}
             - name: JOB_MANAGER_RPC_ADDRESS
               value: {{ $fullname }}-jobmanager-headless
+{{ toYaml $root.Values.jobmanager.environment | indent 12 }}
           resources:
-{{ toYaml $root.Values.resources | indent 12 }}
+{{ toYaml $root.Values.jobmanager.resources | indent 12 }}
       imagePullSecrets:
         - name: regcred
       affinity:
@@ -92,14 +91,18 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: flink
+        labels:
+          app: {{ $name }}
+          role: jobmanager
+          release: {{ $root.Release.Name }}
       spec:
         accessModes: [ "ReadWriteOnce" ]
         resources:
           requests:
             storage: 2Gi
-        storageClassName: "standard"
+        storageClassName: "hostpath"
 ---
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ $fullname }}-taskmanager
@@ -124,10 +127,8 @@ spec:
     spec:
       containers:
         - name: {{ $root.Chart.Name }}
-          image: "{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
+          image: "{{ $root.Values.image.registry }}{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
           imagePullPolicy: {{ $root.Values.image.pullPolicy }}
-          command:
-            - /custom_entrypoint.sh
           args:
             - taskmanager
           ports:
@@ -139,7 +140,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - mountPath: /var/tmp/data
-              subPath: data
+              subPath: flink/taskmanager
               name: flink
           env:
             - name: POD_NAME
@@ -156,8 +157,9 @@ spec:
               value: "1"
             - name: JOB_MANAGER_RPC_ADDRESS
               value: {{ $fullname }}-jobmanager-headless
+{{ toYaml $root.Values.taskmanager.environment | indent 12 }}
           resources:
-{{ toYaml $root.Values.resources | indent 12 }}
+{{ toYaml $root.Values.taskmanager.resources | indent 12 }}
       imagePullSecrets:
         - name: regcred
       affinity:
@@ -177,9 +179,13 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: flink
+        labels:
+          app: {{ $name }}
+          role: taskmanager
+          release: {{ $root.Release.Name }}
       spec:
         accessModes: [ "ReadWriteOnce" ]
         resources:
           requests:
             storage: 5Gi
-        storageClassName: "standard"
+        storageClassName: "hostpath"

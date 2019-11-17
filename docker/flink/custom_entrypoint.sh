@@ -1,23 +1,5 @@
 #!/bin/bash
 
-###############################################################################
-#  Licensed to the Apache Software Foundation (ASF) under one
-#  or more contributor license agreements.  See the NOTICE file
-#  distributed with this work for additional information
-#  regarding copyright ownership.  The ASF licenses this file
-#  to you under the Apache License, Version 2.0 (the
-#  "License"); you may not use this file except in compliance
-#  with the License.  You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-# limitations under the License.
-###############################################################################
-
 if [ -n "$KEYSTORE_CONTENT" ]; then
   echo "Found keystore content"
   echo $KEYSTORE_CONTENT | base64 -d > /keystore.jks
@@ -51,17 +33,27 @@ fi
 
 if [ -z "$FLINK_GRAPHITE_HOST" ]; then
   echo "Graphite host not defined. Will use default value (graphite)"
-  FLINK_GRAPHITE_HOST=graphite
+  export FLINK_GRAPHITE_HOST=graphite
 fi
 
 if [ -z "$FLINK_GRAPHITE_PORT" ]; then
   echo "Graphite port not defined. Will use default value (2003)"
-  FLINK_GRAPHITE_PORT=2003
+  export FLINK_GRAPHITE_PORT=2003
 fi
 
 if [ -z "$FLINK_GRAPHITE_PREFIX" ]; then
   echo "Graphite prefix not defined. Will use default value"
-  FLINK_GRAPHITE_PREFIX="nextbreakpoint.flink.$FLINK_ENVIRONMENT"
+  export FLINK_GRAPHITE_PREFIX="nextbreakpoint.flink.$FLINK_ENVIRONMENT"
+fi
+
+if [ -z "$FLINK_PROMETHEUS_PORT" ]; then
+  echo "Prometheus port not defined. Will use default value (9999)"
+  export FLINK_PROMETHEUS_PORT=9999
+fi
+
+if [ -z "$FLINK_METRICS_REPORTERS" ]; then
+  echo "Metrics reporters not defined. Will use default value (graphite)"
+  export FLINK_METRICS_REPORTERS="prometheus"
 fi
 
 # If unspecified, the hostname of the container is taken as the JobManager address
@@ -73,7 +65,11 @@ if [ "$1" = "help" ]; then
 elif [ "$1" = "jobmanager" ]; then
     echo "Starting Job Manager"
 
-    echo "metrics.reporters: graphite" >> "$FLINK_HOME/conf/flink-conf.yaml"
+    echo "metrics.reporters: $FLINK_METRICS_REPORTERS" >> "$FLINK_HOME/conf/flink-conf.yaml"
+
+    echo "metrics.reporter.prometheus.class: org.apache.flink.metrics.prometheus.PrometheusReporter" >> "$FLINK_HOME/conf/flink-conf.yaml"
+    echo "metrics.reporter.prometheus.port: $FLINK_PROMETHEUS_PORT" >> "$FLINK_HOME/conf/flink-conf.yaml"
+
     echo "metrics.reporter.graphite.class: org.apache.flink.metrics.graphite.GraphiteReporter" >> "$FLINK_HOME/conf/flink-conf.yaml"
     echo "metrics.reporter.graphite.host: $FLINK_GRAPHITE_HOST" >> "$FLINK_HOME/conf/flink-conf.yaml"
     echo "metrics.reporter.graphite.port: $FLINK_GRAPHITE_PORT" >> "$FLINK_HOME/conf/flink-conf.yaml"
@@ -81,15 +77,15 @@ elif [ "$1" = "jobmanager" ]; then
     echo "metrics.reporter.graphite.protocol: TCP" >> "$FLINK_HOME/conf/flink-conf.yaml"
 
     if [ -n "$FLINK_CHECKPOINTS_LOCATION" ]; then
-      echo "state.checkpoints.dir: $FLINK_CHECKPOINTS_LOCATION" >> "$FLINK_PATH/conf/flink-conf.yaml"
+      echo "state.checkpoints.dir: $FLINK_CHECKPOINTS_LOCATION" >> "$FLINK_HOME/conf/flink-conf.yaml"
     fi
 
     if [ -n "$FLINK_SAVEPOINTS_LOCATION" ]; then
-      echo "state.savepoints.dir: $FLINK_SAVEPOINTS_LOCATION" >> "$FLINK_PATH/conf/flink-conf.yaml"
+      echo "state.savepoints.dir: $FLINK_SAVEPOINTS_LOCATION" >> "$FLINK_HOME/conf/flink-conf.yaml"
     fi
 
     if [ -n "$FLINK_FS_CHECKPOINTS_LOCATION" ]; then
-      echo "state.backend.fs.checkpointdir: $FLINK_FS_CHECKPOINTS_LOCATION" >> "$FLINK_PATH/conf/flink-conf.yaml"
+      echo "state.backend.fs.checkpointdir: $FLINK_FS_CHECKPOINTS_LOCATION" >> "$FLINK_HOME/conf/flink-conf.yaml"
     fi
 
     echo "jobmanager.rpc.address: ${JOB_MANAGER_RPC_ADDRESS}" >> "$FLINK_HOME/conf/flink-conf.yaml"
@@ -101,17 +97,16 @@ elif [ "$1" = "jobmanager" ]; then
     exit 0
 elif [ "$1" = "taskmanager" ]; then
     if [ -z "$TASK_MANAGER_NUMBER_OF_TASK_SLOTS" ]; then
-      TASK_MANAGER_NUMBER_OF_TASK_SLOTS=${TASK_MANAGER_NUMBER_OF_TASK_SLOTS:-$(grep -c ^processor /proc/cpuinfo)}
+      export TASK_MANAGER_NUMBER_OF_TASK_SLOTS=${TASK_MANAGER_NUMBER_OF_TASK_SLOTS:-$(grep -c ^processor /proc/cpuinfo)}
     fi
-
-    echo "jobmanager.rpc.address: ${JOB_MANAGER_RPC_ADDRESS}" >> "$FLINK_HOME/conf/flink-conf.yaml"
-    echo "taskmanager.numberOfTaskSlots: $TASK_MANAGER_NUMBER_OF_TASK_SLOTS" >> "$FLINK_HOME/conf/flink-conf.yaml"
-    echo "blob.server.port: 6124" >> "$FLINK_HOME/conf/flink-conf.yaml"
-    echo "query.server.port: 6125" >> "$FLINK_HOME/conf/flink-conf.yaml"
 
     echo "Starting Task Manager"
 
-    echo "metrics.reporters: graphite" >> "$FLINK_HOME/conf/flink-conf.yaml"
+    echo "metrics.reporters: $FLINK_METRICS_REPORTERS" >> "$FLINK_HOME/conf/flink-conf.yaml"
+
+    echo "metrics.reporter.prometheus.class: org.apache.flink.metrics.prometheus.PrometheusReporter" >> "$FLINK_HOME/conf/flink-conf.yaml"
+    echo "metrics.reporter.prometheus.port: $FLINK_PROMETHEUS_PORT" >> "$FLINK_HOME/conf/flink-conf.yaml"
+
     echo "metrics.reporter.graphite.class: org.apache.flink.metrics.graphite.GraphiteReporter" >> "$FLINK_HOME/conf/flink-conf.yaml"
     echo "metrics.reporter.graphite.host: $FLINK_GRAPHITE_HOST" >> "$FLINK_HOME/conf/flink-conf.yaml"
     echo "metrics.reporter.graphite.port: $FLINK_GRAPHITE_PORT" >> "$FLINK_HOME/conf/flink-conf.yaml"
@@ -119,16 +114,21 @@ elif [ "$1" = "taskmanager" ]; then
     echo "metrics.reporter.graphite.protocol: TCP" >> "$FLINK_HOME/conf/flink-conf.yaml"
 
     if [ -n "$FLINK_CHECKPOINTS_LOCATION" ]; then
-      echo "state.checkpoints.dir: $FLINK_CHECKPOINTS_LOCATION" >> "$FLINK_PATH/conf/flink-conf.yaml"
+      echo "state.checkpoints.dir: $FLINK_CHECKPOINTS_LOCATION" >> "$FLINK_HOME/conf/flink-conf.yaml"
     fi
 
     if [ -n "$FLINK_SAVEPOINTS_LOCATION" ]; then
-      echo "state.savepoints.dir: $FLINK_SAVEPOINTS_LOCATION" >> "$FLINK_PATH/conf/flink-conf.yaml"
+      echo "state.savepoints.dir: $FLINK_SAVEPOINTS_LOCATION" >> "$FLINK_HOME/conf/flink-conf.yaml"
     fi
 
     if [ -n "$FLINK_FS_CHECKPOINTS_LOCATION" ]; then
-      echo "state.backend.fs.checkpointdir: $FLINK_FS_CHECKPOINTS_LOCATION" >> "$FLINK_PATH/conf/flink-conf.yaml"
+      echo "state.backend.fs.checkpointdir: $FLINK_FS_CHECKPOINTS_LOCATION" >> "$FLINK_HOME/conf/flink-conf.yaml"
     fi
+
+    echo "jobmanager.rpc.address: ${JOB_MANAGER_RPC_ADDRESS}" >> "$FLINK_HOME/conf/flink-conf.yaml"
+    echo "taskmanager.numberOfTaskSlots: $TASK_MANAGER_NUMBER_OF_TASK_SLOTS" >> "$FLINK_HOME/conf/flink-conf.yaml"
+    echo "blob.server.port: 6124" >> "$FLINK_HOME/conf/flink-conf.yaml"
+    echo "query.server.port: 6125" >> "$FLINK_HOME/conf/flink-conf.yaml"
 
     echo "config file: " && grep '^[^\n#]' "$FLINK_HOME/conf/flink-conf.yaml"
     bash "$FLINK_HOME/bin/taskmanager.sh" start-foreground

@@ -4,7 +4,7 @@
 {{- $root := . }}
 {{ range .Values.nodes }}
 ---
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $fullname }}-k8s{{ . }}
@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: {{ $root.Chart.Name }}
-          image: "{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
+          image: "{{ $root.Values.image.registry }}{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
           imagePullPolicy: {{ $root.Values.image.pullPolicy }}
           ports:
             - name: client
@@ -54,10 +54,10 @@ spec:
           #     port: http
           volumeMounts:
             - mountPath: /var/tmp/datalog
-              subPath: datalog
+              subPath: zookeeper/datalog
               name: zookeeper-data
             - mountPath: /var/tmp/data
-              subPath: data
+              subPath: zookeeper/data
               name: zookeeper-data
             - mountPath: "/etc/zookeeper_jaas.conf"
               subPath: jaasconfig
@@ -66,6 +66,8 @@ spec:
           env:
             - name: ZOO_MY_ID
               value: "{{ . }}"
+            - name: ZOO_PORT
+              value: "2181"  
             - name: ZOO_SERVERS
               value: "server.1={{ if eq . "1" }}{{ "0.0.0.0" }}{{ else }}{{ $fullname }}-k8s1{{ end }}:2888:3888 server.2={{ if eq . "2" }}{{ "0.0.0.0" }}{{ else }}{{ $fullname }}-k8s2{{ end }}:2888:3888 server.3={{ if eq . "3" }}{{ "0.0.0.0" }}{{ else }}{{ $fullname }}-k8s3{{ end }}:2888:3888"
             - name: ZOO_ENABLE_QUORUM_SASL
@@ -78,8 +80,8 @@ spec:
               value: "/var/tmp/data"
             - name: JVMFLAGS
               value: "{{ $root.Values.environment.jvmFlags }}"
-            - name: NEXTBREAKPOINT_JAAS_CONFIG
-              value: "/etc/zookeeper_jaas.conf"
+            # - name: JAAS_CONFIG_LOCATION
+            #   value: "/etc/zookeeper_jaas.conf"
           resources:
 {{ toYaml $root.Values.resources | indent 12 }}
       imagePullSecrets:
@@ -87,7 +89,7 @@ spec:
       volumes:
         - name: zookeeper-data
           persistentVolumeClaim:
-            claimName: {{ $fullname }}-pvc-k8s{{ . }}
+            claimName: {{ $fullname }}-k8s{{ . }}
         - name: zookeeper-jaas-config
           secret:
             secretName: {{ $fullname }}-jaas-config

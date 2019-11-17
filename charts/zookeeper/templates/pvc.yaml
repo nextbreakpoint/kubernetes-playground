@@ -6,9 +6,9 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: {{ $fullname }}-pvc-k8s{{ . }}
+  name: {{ $fullname }}-k8s{{ . }}
 spec:
-  storageClassName: standard
+  storageClassName: hostpath
   accessModes:
     - ReadWriteOnce
   resources:

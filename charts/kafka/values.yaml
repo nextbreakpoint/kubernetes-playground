@@ -3,9 +3,10 @@
 # Declare variables to be passed into your templates.
 
 image:
-  repository: 192.168.1.11:30000/nextbreakpoint/cp-kafka
-  tag: 5.0.1
-  pullPolicy: IfNotPresent
+  registry: 192.168.1.11:30000/
+  repository: nextbreakpoint/cp-kafka
+  tag: 5.3.1
+  pullPolicy: Always
 
 service:
   firstExternalBrokerPort: 32000
@@ -31,6 +32,4 @@ nodes:
   - "3"
 
 zookeeper:
-  name: zookeeper-headless
-  app: zookeeper
-  port: 2181
+  connect: "zookeeper-k8s1:2181,zookeeper-k8s2:2181,zookeeper-k8s3:2181"

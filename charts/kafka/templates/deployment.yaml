@@ -4,7 +4,7 @@
 {{- $root := . }}
 {{ range .Values.nodes }}
 ---
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $fullname }}-k8s{{ . }}
@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: {{ $root.Chart.Name }}
-          image: "{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
+          image: "{{ $root.Values.image.registry }}{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
           imagePullPolicy: {{ $root.Values.image.pullPolicy }}
           ports:
             - name: broker
@@ -51,18 +51,12 @@ spec:
           #     port: http
           volumeMounts:
             - mountPath: /var/tmp/data
-              subPath: data
+              subPath: kafka/data
               name: kafka-data
             - mountPath: "/etc/kafka_jaas.conf"
               subPath: jaasconfig
               name: kafka-jaas-config
               readOnly: true
-          command:
-            - sh
-            - -exc
-            - |
-              unset KAFKA_PORT && \
-              exec /etc/confluent/docker/run
           env:
             - name: POD_NAME
               valueFrom:
@@ -77,13 +71,13 @@ spec:
             - name: KAFKA_HEAP_OPTS
               value: "{{ $root.Values.environment.jvmFlags }}"
             - name: KAFKA_ZOOKEEPER_CONNECT
-              value: "{{ $root.Values.zookeeper.name }}:{{ $root.Values.zookeeper.port }}"
+              value: "{{ $root.Values.zookeeper.connect }}"
             - name: KAFKA_ADVERTISED_LISTENERS
               value: "PLAINTEXT://{{ $fullname }}-k8s{{.}}:9092,EXTERNAL://k8s{{ . }}:{{ add $root.Values.service.firstExternalBrokerPort . }}"
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
               value: "PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_PLAINTEXT:SASL_PLAINTEXT,SASL_SSL:SASL_SSL,EXTERNAL:PLAINTEXT"
             - name: KAFKA_NUM_PARTITIONS
-              value: "10"
+              value: "64"
             - name: KAFKA_DELETE_TOPICS
               value: "true"
             - name: KAFKA_AUTO_CREATE_TOPICS
@@ -91,7 +85,7 @@ spec:
             - name: KAFKA_LOG_RETENTION_HOURS
               value: "24"
             - name: KAFKA_TRANSACTION_MAX_TIMEOUT_MS
-              value: "3600000"
+              value: "60000"
             - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
               value: "3"
             - name: KAFKA_LOG_DIRS
@@ -102,8 +96,8 @@ spec:
             #   value: "true"
             - name: CONFLUENT_SUPPORT_METRICS_ENABLE
               value: "false"
-            - name: NEXTBREAKPOINT_JAAS_CONFIG
-              value: "/etc/kafka_jaas.conf"
+            # - name: JAAS_CONFIG_LOCATION
+            #   value: "/etc/kafka_jaas.conf"
           resources:
 {{ toYaml $root.Values.resources | indent 12 }}
       imagePullSecrets:
@@ -111,7 +105,7 @@ spec:
       volumes:
         - name: kafka-data
           persistentVolumeClaim:
-            claimName: {{ $fullname }}-pvc-k8s{{ . }}
+            claimName: {{ $fullname }}-k8s{{ . }}
         - name: kafka-jaas-config
           secret:
             secretName: {{ $fullname }}-jaas-config
