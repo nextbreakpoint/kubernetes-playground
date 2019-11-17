@@ -3,9 +3,10 @@
 # Declare variables to be passed into your templates.
 
 image:
-  repository: 192.168.1.11:30000/nextbreakpoint/zookeeper
-  tag: 3.4.12
-  pullPolicy: IfNotPresent
+  registry: 192.168.1.11:30000/
+  repository: nextbreakpoint/zookeeper
+  tag: 3.4.14
+  pullPolicy: Always
 
 service:
   firstExternalClientPort: 32100

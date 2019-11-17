@@ -1,5 +1,7 @@
 #!/bin/sh
 
+mkdir -p /var/tmp/data/kafka-logs
+
 if [ -z "$KEYSTORE_LOCATION" ]; then
   if [ -n "$KEYSTORE_CONTENT" ]; then
     echo $KEYSTORE_CONTENT | base64 -d > /var/tmp/keystore.jks
@@ -19,8 +21,12 @@ export KAFKA_OPTS="-javaagent:/opt/jmx-exporter/jmx-exporter.jar=7070:/etc/jmx-e
 if [ -z "$JAAS_CONFIG_LOCATION" ]; then
   if [ -n "$JAAS_CONFIG_CONTENT" ]; then
     echo $JAAS_CONFIG_CONTENT | base64 -d > /var/tmp/kafka_jaas.conf
-    KAFKA_OPTS="$KAFKA_OPTS -Djava.security.auth.login.config=/var/tmp/kafka_jaas.conf"
+    JAAS_CONFIG_LOCATION="/var/tmp/kafka_jaas.conf"
   fi
+fi
+
+if [ -n "$JAAS_CONFIG_LOCATION" ]; then
+  export KAFKA_OPTS="$KAFKA_OPTS -Djava.security.auth.login.config=$JAAS_CONFIG_LOCATION"
 fi
 
 if [ -n "$KEYSTORE_LOCATION" ]; then
@@ -39,4 +45,5 @@ EOF
   fi
 fi
 
+unset KAFKA_PORT
 exec "$@"

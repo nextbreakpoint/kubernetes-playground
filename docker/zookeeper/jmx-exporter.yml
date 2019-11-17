@@ -15,3 +15,5 @@ rules:
     labels:
       replicaId: "$2"
       memberType: "$3"
+  - pattern: "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)"
+    name: "zookeeper_$2"

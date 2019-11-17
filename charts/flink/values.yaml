@@ -3,23 +3,37 @@
 # Declare variables to be passed into your templates.
 
 image:
-  repository: 192.168.1.11:30000/nextbreakpoint/flink
-  tag: 1.7.2
-  pullPolicy: IfNotPresent
+  registry: 192.168.1.11:30000/
+  repository: nextbreakpoint/flink
+  tag: 1.9.0
+  pullPolicy: Always
 
-resources:
-  limits:
-   cpu: 100m
-   memory: 1100Mi
-  requests:
-   cpu: 100m
-   memory: 1100Mi
+jobmanager:
+  resources:
+    limits:
+     cpu: 100m
+     memory: 300Mi
+    requests:
+     cpu: 100m
+     memory: 300Mi
+  environment:
+    - name: FLINK_JM_HEAP
+      value: "256"
 
-environment:
-  jvmFlags: "-Xms1024M -Xmx1024M"
+taskmanager:
+  resources:
+    limits:
+     cpu: 100m
+     memory: 1100Mi
+    requests:
+     cpu: 100m
+     memory: 1100Mi
+  environment:
+    - name: FLINK_TM_HEAP
+      value: "1024"
 
 storage:
-  create: false
+  create: true
 
 nodes:
   - "1"

@@ -2,24 +2,26 @@
 {{- $name := include "flink.name" . -}}
 {{- $root := . }}
 {{ if $root.Values.storage.create }}
+{{ range .Values.nodes }}
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ $fullname }}-pv-jobmanager-k8s1
+  name: {{ $fullname }}-jobmanager-k8s{{ . }}
   labels:
     app: {{ $name }}
     release: {{ $root.Release.Name }}
-    node: k8s1
+    node: k8s{{ . }}
+    role: jobmanager
 spec:
   capacity:
     storage: 2Gi
   accessModes:
   - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: standard
+  storageClassName: hostpath
   local:
-    path: /var/tmp/flink/jobmanager
+    path: /var/tmp
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -27,26 +29,26 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - k8s1
-{{ range .Values.nodes }}
+          - k8s{{ . }}
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ $fullname }}-pv-taskmanager-k8s{{ . }}
+  name: {{ $fullname }}-taskmanager-k8s{{ . }}
   labels:
     app: {{ $name }}
     release: {{ $root.Release.Name }}
     node: k8s{{ . }}
+    role: taskmanager
 spec:
   capacity:
     storage: 5Gi
   accessModes:
   - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: standard
+  storageClassName: hostpath
   local:
-    path: /var/tmp/flink/taskmanager
+    path: /var/tmp
   nodeAffinity:
     required:
       nodeSelectorTerms:
