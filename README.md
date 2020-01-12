@@ -47,15 +47,9 @@ Execute command on master node:
     kubectl get nodes
 
     NAME   STATUS   ROLES    AGE     VERSION
-    k8s1   Ready    master   66m   v1.16.2
-    k8s2   Ready    <none>   60m   v1.16.2
-    k8s3   Ready    <none>   58m   v1.16.2
-
-## Install Tiller (optional, required for using Helm)
-
-Execute script on master node:
-
-    start-tiller
+    k8s1   Ready    master   66m     v1.17.0
+    k8s2   Ready    <none>   60m     v1.17.0
+    k8s3   Ready    <none>   58m     v1.17.0
 
 ## Create the default Storage Class
 
@@ -206,15 +200,15 @@ Create Docker images for Kafka, Zookeeper, and Flink:
 
 Install Kafka, Zookeeper, and Flink charts:
 
-    helm install --name zookeeper charts/zookeeper
-    helm install --name kafka charts/kafka
-    helm install --name flink charts/flink
+    helm install zookeeper charts/zookeeper
+    helm install kafka charts/kafka
+    helm install flink charts/flink
 
 Delete Kafka, Zookeeper, and Flink charts:
 
-    helm delete --purge zookeeper
-    helm delete --purge kafka
-    helm delete --purge flink
+    helm uninstall zookeeper
+    helm uninstall kafka
+    helm uninstall flink
 
 ## Credits
 

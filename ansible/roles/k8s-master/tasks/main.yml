@@ -154,7 +154,6 @@
     - "kubeadm-hash"
     - "kubeadm-token"
     - "taint-nodes"
-    - "start-tiller"
     - "create-storage-class"
     - "create-join-script"
     - "docker-registry-create"
@@ -219,7 +218,7 @@
 - name: Ensure Helm files
   become: yes
   get_url:
-    url: https://get.helm.sh/helm-v2.15.2-linux-amd64.tar.gz
+    url: https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz
     dest: /var/tmp/helm.tar.gz
     mode: 0444
   tags:
@@ -244,12 +243,6 @@
 - name: Install helm command
   become: yes
   command: "cp /var/tmp/helm/linux-amd64/helm /usr/local/bin"
-  tags:
-    - k8s
-
-- name: Install tiller command
-  become: yes
-  command: "cp /var/tmp/helm/linux-amd64/tiller /usr/local/bin"
   tags:
     - k8s
 
