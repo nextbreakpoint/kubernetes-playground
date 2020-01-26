@@ -178,21 +178,15 @@
   tags:
     - k8s
 
-- name: Install dashboard rbac
-  become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/dashboard-rbac-config.yaml"
-  tags:
-    - k8s
-
-- name: Install tiller rbac
-  become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/tiller-rbac-config.yaml"
-  tags:
-    - k8s
-
 - name: Install dashboard service
   become: yes
   command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/kubernetes-dashboard.yaml"
+  tags:
+    - k8s
+
+- name: Install dashboard rbac
+  become: yes
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/dashboard-rbac-config.yaml"
   tags:
     - k8s
 
