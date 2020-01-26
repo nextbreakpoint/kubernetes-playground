@@ -11,7 +11,7 @@ List jobs running on Flink service by running these commands:
 Submit a job to Flink service by running these commands:
 
   cat <<EOF >Dockerfile
-    FROM flink:1.9.0-hadoop28-scala_2.11-alpine
+  FROM flink:1.9.0-hadoop28-scala_2.11-alpine
   COPY some-flink-job.jar /some-flink-job.jar
   EOF
 

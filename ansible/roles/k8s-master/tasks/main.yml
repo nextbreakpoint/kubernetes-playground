@@ -19,7 +19,7 @@
       kind: ServiceAccount
       metadata:
         name: admin-user
-        namespace: kube-system
+        namespace: kubernetes-dashboard
       ---
       apiVersion: rbac.authorization.k8s.io/v1
       kind: ClusterRoleBinding
@@ -32,34 +32,8 @@
       subjects:
       - kind: ServiceAccount
         name: admin-user
-        namespace: kube-system
+        namespace: kubernetes-dashboard
     dest: /var/tmp/dashboard-rbac-config.yaml
-  tags:
-    - k8s
-
-- name: Copy tiller rbac config
-  become: yes
-  copy:
-    content: |
-      apiVersion: v1
-      kind: ServiceAccount
-      metadata:
-        name: tiller
-        namespace: kube-system
-      ---
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: ClusterRoleBinding
-      metadata:
-        name: tiller
-      roleRef:
-        apiGroup: rbac.authorization.k8s.io
-        kind: ClusterRole
-        name: cluster-admin
-      subjects:
-        - kind: ServiceAccount
-          name: tiller
-          namespace: kube-system
-    dest: /var/tmp/tiller-rbac-config.yaml
   tags:
     - k8s
 
@@ -71,6 +45,13 @@
       apiVersion: storage.k8s.io/v1
       metadata:
         name: hostpath
+      provisioner: kubernetes.io/no-provisioner
+      volumeBindingMode: WaitForFirstConsumer
+      ---
+      kind: StorageClass
+      apiVersion: storage.k8s.io/v1
+      metadata:
+        name: standatd
       provisioner: kubernetes.io/no-provisioner
       volumeBindingMode: WaitForFirstConsumer
     dest: /var/tmp/storageclass-config.yaml
@@ -154,7 +135,6 @@
     - "kubeadm-hash"
     - "kubeadm-token"
     - "taint-nodes"
-    - "start-tiller"
     - "create-storage-class"
     - "create-join-script"
     - "docker-registry-create"
@@ -192,21 +172,9 @@
 - name: Ensure dashboard file
   become: yes
   get_url:
-    url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml
+    url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta8/aio/deploy/recommended.yaml
     dest: /var/tmp/kubernetes-dashboard.yaml
     mode: 0444
-  tags:
-    - k8s
-
-- name: Install dashboard rbac
-  become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/dashboard-rbac-config.yaml"
-  tags:
-    - k8s
-
-- name: Install tiller rbac
-  become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/tiller-rbac-config.yaml"
   tags:
     - k8s
 
@@ -216,10 +184,16 @@
   tags:
     - k8s
 
+- name: Install dashboard rbac
+  become: yes
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/dashboard-rbac-config.yaml"
+  tags:
+    - k8s
+
 - name: Ensure Helm files
   become: yes
   get_url:
-    url: https://get.helm.sh/helm-v2.15.2-linux-amd64.tar.gz
+    url: https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz
     dest: /var/tmp/helm.tar.gz
     mode: 0444
   tags:
@@ -244,12 +218,6 @@
 - name: Install helm command
   become: yes
   command: "cp /var/tmp/helm/linux-amd64/helm /usr/local/bin"
-  tags:
-    - k8s
-
-- name: Install tiller command
-  become: yes
-  command: "cp /var/tmp/helm/linux-amd64/tiller /usr/local/bin"
   tags:
     - k8s
 

@@ -18,7 +18,7 @@ spec:
     storage: 2Gi
   accessModes:
   - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
+  persistentVolumeReclaimPolicy: Delete
   storageClassName: hostpath
   local:
     path: /var/tmp
@@ -45,7 +45,7 @@ spec:
     storage: 5Gi
   accessModes:
   - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
+  persistentVolumeReclaimPolicy: Delete
   storageClassName: hostpath
   local:
     path: /var/tmp

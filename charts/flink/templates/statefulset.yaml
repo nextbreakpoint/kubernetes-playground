@@ -13,6 +13,7 @@ metadata:
     heritage: {{ $root.Release.Service }}
 spec:
   replicas: 1
+  serviceName: default
   selector:
     matchLabels:
       app: {{ $name }}
@@ -113,6 +114,7 @@ metadata:
     heritage: {{ $root.Release.Service }}
 spec:
   replicas: 2
+  serviceName: default
   selector:
     matchLabels:
       app: {{ $name }}
