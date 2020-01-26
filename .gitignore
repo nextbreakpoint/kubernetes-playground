@@ -6,4 +6,4 @@ admin.conf
 join.sh
 docker-registry.crt
 Dockerfile
-token
+.token
