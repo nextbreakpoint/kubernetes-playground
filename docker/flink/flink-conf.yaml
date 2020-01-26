@@ -246,12 +246,6 @@ rest.port: 8081
 blob.server.port: 6124
 query.server.port: 6125
 
-fs.hdfs.hadoopconf: /hadoop/etc
-jobmanager.log.path: /var/log/jobmanager.log
-taskmanager.log.path: /var/log/taskmanager.log
-jobmanager.tmp.dirs: /tmp
-taskmanager.tmp.dirs: /tmp
-
 metrics.reporters: prometheus
 
 metrics.reporter.prometheus.class: org.apache.flink.metrics.prometheus.PrometheusReporter
