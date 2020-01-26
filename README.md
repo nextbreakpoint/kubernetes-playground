@@ -96,23 +96,22 @@ Execute command on master node:
     kubectl get pods --all-namespaces
 
     NAMESPACE              NAME                                         READY   STATUS    RESTARTS   AGE
-    kube-system            calico-kube-controllers-6d85fdfbd8-vj8h4     1/1     Running   0          54m
-    kube-system            calico-node-95lgg                            1/1     Running   0          54m
-    kube-system            calico-node-b4mww                            1/1     Running   0          54m
-    kube-system            calico-node-kmj9p                            1/1     Running   0          54m
-    kube-system            coredns-5644d7b6d9-hdjdn                     1/1     Running   0          63m
-    kube-system            coredns-5644d7b6d9-thlbt                     1/1     Running   0          63m
-    kube-system            etcd-k8s1                                    1/1     Running   0          62m
-    kube-system            kube-apiserver-k8s1                          1/1     Running   0          62m
-    kube-system            kube-controller-manager-k8s1                 1/1     Running   0          62m
-    kube-system            kube-proxy-ncn8b                             1/1     Running   0          56m
-    kube-system            kube-proxy-p5tnv                             1/1     Running   0          63m
-    kube-system            kube-proxy-pkf9w                             1/1     Running   0          58m
-    kube-system            kube-scheduler-k8s1                          1/1     Running   0          62m
-    kube-system            metrics-server-7777f7fc4c-bg72x              1/1     Running   0          21m
-    kube-system            tiller-deploy-684c9f98f5-wmdm8               1/1     Running   0          52m
-    kubernetes-dashboard   dashboard-metrics-scraper-566cddb686-q5n78   1/1     Running   0          63m
-    kubernetes-dashboard   kubernetes-dashboard-7b5bf5d559-tgvck        1/1     Running   0          63m
+    kube-system            calico-kube-controllers-7489ff5b7c-dqq85     1/1     Running   0          70s
+    kube-system            calico-node-lxvr2                            1/1     Running   0          70s
+    kube-system            calico-node-skn8v                            1/1     Running   0          70s
+    kube-system            calico-node-txsmg                            1/1     Running   0          70s
+    kube-system            coredns-6955765f44-42vtc                     1/1     Running   0          4m55s
+    kube-system            coredns-6955765f44-b5265                     1/1     Running   0          4m55s
+    kube-system            etcd-k8s1                                    1/1     Running   0          5m12s
+    kube-system            kube-apiserver-k8s1                          1/1     Running   0          5m12s
+    kube-system            kube-controller-manager-k8s1                 1/1     Running   0          5m12s
+    kube-system            kube-proxy-9klvv                             1/1     Running   0          83s
+    kube-system            kube-proxy-b249l                             1/1     Running   0          4m55s
+    kube-system            kube-proxy-ncdx2                             1/1     Running   0          3m5s
+    kube-system            kube-scheduler-k8s1                          1/1     Running   0          5m12s
+    kube-system            metrics-server-577d4c46bb-n99rg              1/1     Running   0          4m55s
+    kubernetes-dashboard   dashboard-metrics-scraper-566cddb686-hfmxd   1/1     Running   0          4m55s
+    kubernetes-dashboard   kubernetes-dashboard-7b5bf5d559-xxbqb        1/1     Running   0          4m55s
 
 ## Get token for accessing Dashboard
 
