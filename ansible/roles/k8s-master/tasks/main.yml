@@ -240,8 +240,8 @@
 - name: Modify Metrics server deployment
   become: yes
   blockinfile:
-    dest: /var/tmp/metrics-server/deploy/1.8+/metrics-server-deployment.yaml
-    insertafter: 'imagePullPolicy: Always'
+    dest: /var/tmp/metrics-server/deploy/kubernetes/metrics-server-deployment.yaml
+    insertafter: 'imagePullPolicy: IfNotPresent'
     block: "        command: ['/metrics-server', '--kubelet-insecure-tls', '--kubelet-preferred-address-types=InternalIP']"
     backup: yes
   tags:
@@ -250,7 +250,7 @@
 - name: Change runAsRoot in Metrics server deployment
   become: yes
   replace:
-      path: /var/tmp/metrics-server/deploy/1.8+/metrics-server-deployment.yaml
+      path: /var/tmp/metrics-server/deploy/kubernetes/metrics-server-deployment.yaml
       regexp: 'runAsNonRoot: true'
       replace: 'runAsNonRoot: false'
   tags:
@@ -258,7 +258,7 @@
 
 - name: Print Metrics server deployment
   become: yes
-  command: "cat /var/tmp/metrics-server/deploy/1.8+/metrics-server-deployment.yaml"
+  command: "cat /var/tmp/metrics-server/deploy/kubernetes/metrics-server-deployment.yaml"
   register: cat
   tags:
     - k8s
@@ -266,7 +266,7 @@
 
 - name: Install Metrics server
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf create -f /var/tmp/metrics-server/deploy/1.8+/"
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf create -f /var/tmp/metrics-server/deploy/kubernetes/"
   tags:
     - k8s
 
