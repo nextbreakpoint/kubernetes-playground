@@ -1,4 +1,5 @@
 #!/bin/bash
 
-kubectl create -f /var/tmp/storageclass-config.yaml
+kubectl create -f /var/k8s/storageclass-config.yaml
+
 kubectl patch storageclass hostpath -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
