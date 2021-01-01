@@ -33,7 +33,7 @@
       - kind: ServiceAccount
         name: admin-user
         namespace: kubernetes-dashboard
-    dest: /var/tmp/dashboard-rbac-config.yaml
+    dest: /var/k8s/dashboard-rbac-config.yaml
   tags:
     - k8s
 
@@ -54,7 +54,7 @@
         name: standatd
       provisioner: kubernetes.io/no-provisioner
       volumeBindingMode: WaitForFirstConsumer
-    dest: /var/tmp/storageclass-config.yaml
+    dest: /var/k8s/storageclass-config.yaml
   tags:
     - k8s
 
@@ -93,18 +93,28 @@
 - name: Ensure Calico network file
   become: yes
   get_url:
-    url: https://docs.projectcalico.org/v3.10/manifests/calico.yaml
-    dest: /var/tmp/calico.yaml
+    url: https://docs.projectcalico.org/manifests/calico.yaml
+    dest: /var/k8s/calico.yaml
     mode: 0444
   tags:
     - k8s
 
-- name: Ensure Calico CIDR
+- name: Ensure CALICO_IPV4POOL_CIDR key
   become: yes
   replace:
-    path: /var/tmp/calico.yaml
-    regexp: '192.168.0.0\/16'
-    replace: '172.43.0.0/16'
+    path: /var/k8s/calico.yaml
+    regexp: '# - name: CALICO_IPV4POOL_CIDR'
+    replace: '- name: CALICO_IPV4POOL_CIDR'
+    backup: yes
+  tags:
+    - k8s
+
+- name: Ensure CALICO_IPV4POOL_CIDR value
+  become: yes
+  replace:
+    path: /var/k8s/calico.yaml
+    regexp: '#   value: "192.168.0.0\/16"'
+    replace: '  value: "172.43.0.0/16"'
     backup: yes
   tags:
     - k8s
@@ -172,29 +182,29 @@
 - name: Ensure dashboard file
   become: yes
   get_url:
-    url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta8/aio/deploy/recommended.yaml
-    dest: /var/tmp/kubernetes-dashboard.yaml
+    url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.1.0/aio/deploy/recommended.yaml
+    dest: /var/k8s/kubernetes-dashboard.yaml
     mode: 0444
   tags:
     - k8s
 
 - name: Install dashboard service
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/kubernetes-dashboard.yaml"
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/k8s/kubernetes-dashboard.yaml"
   tags:
     - k8s
 
 - name: Install dashboard rbac
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/tmp/dashboard-rbac-config.yaml"
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/k8s/dashboard-rbac-config.yaml"
   tags:
     - k8s
 
 - name: Ensure Helm files
   become: yes
   get_url:
-    url: https://get.helm.sh/helm-v3.0.2-linux-amd64.tar.gz
-    dest: /var/tmp/helm.tar.gz
+    url: https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz
+    dest: /var/k8s/helm.tar.gz
     mode: 0444
   tags:
     - k8s
@@ -202,7 +212,7 @@
 - name: Create Helm directory
   become: yes
   file:
-    path: /var/tmp/helm
+    path: /var/k8s/helm
     state: directory
   tags:
     - k8s
@@ -210,55 +220,45 @@
 - name: Decompress Helm files
   become: yes
   unarchive:
-    src: /var/tmp/helm.tar.gz
-    dest: /var/tmp/helm
+    src: /var/k8s/helm.tar.gz
+    dest: /var/k8s/helm
   tags:
     - k8s
 
 - name: Install helm command
   become: yes
-  command: "cp /var/tmp/helm/linux-amd64/helm /usr/local/bin"
+  command: "cp /var/k8s/helm/linux-amd64/helm /usr/local/bin"
+  tags:
+    - k8s
+
+- name: Add helm repo
+  become: yes
+  command: "helm repo add stable https://charts.helm.sh/stable"
   tags:
     - k8s
 
 - name: Ensure Metrics server files
   become: yes
-  git:
-    repo: 'https://github.com/kubernetes-incubator/metrics-server.git'
-    dest: /var/tmp/metrics-server
+  get_url:
+    url: https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.4.1/components.yaml
+    dest: /var/k8s/metrics-server-components.yaml
+    mode: 0444
   tags:
     - k8s
-
-- name: List Metrics server directory
-  become: yes
-  command: "ls -al /var/tmp/metrics-server"
-  register: lstmp
-  tags:
-    - k8s
-- debug: var=lstmp.stdout_lines
 
 - name: Modify Metrics server deployment
   become: yes
   blockinfile:
-    dest: /var/tmp/metrics-server/deploy/kubernetes/metrics-server-deployment.yaml
-    insertafter: 'imagePullPolicy: IfNotPresent'
-    block: "        command: ['/metrics-server', '--kubelet-insecure-tls', '--kubelet-preferred-address-types=InternalIP']"
+    dest: /var/k8s/metrics-server-components.yaml
+    insertafter: '--secure-port=4443'
+    block: "        - --kubelet-insecure-tls"
     backup: yes
-  tags:
-    - k8s
-
-- name: Change runAsRoot in Metrics server deployment
-  become: yes
-  replace:
-      path: /var/tmp/metrics-server/deploy/kubernetes/metrics-server-deployment.yaml
-      regexp: 'runAsNonRoot: true'
-      replace: 'runAsNonRoot: false'
   tags:
     - k8s
 
 - name: Print Metrics server deployment
   become: yes
-  command: "cat /var/tmp/metrics-server/deploy/kubernetes/metrics-server-deployment.yaml"
+  command: "cat /var/k8s/metrics-server-components.yaml"
   register: cat
   tags:
     - k8s
@@ -266,9 +266,15 @@
 
 - name: Install Metrics server
   become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf create -f /var/tmp/metrics-server/deploy/kubernetes/"
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/k8s/metrics-server-components.yaml"
   tags:
     - k8s
+
+# - name: Install Metrics server
+#   become: yes
+#   command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.4.1/components.yaml"
+#   tags:
+#     - k8s
 
 - name: Create join script
   become: yes
@@ -290,7 +296,7 @@
 - name: Create Docker Registry data directory
   become: yes
   file:
-    path: /var/tmp/docker-registry/data
+    path: /var/k8s/docker-registry/data
     state: directory
   tags:
     - k8s
@@ -298,7 +304,7 @@
 - name: Create Docker Registry certs directory
   become: yes
   file:
-    path: /var/tmp/docker-registry/certs
+    path: /var/k8s/docker-registry/certs
     state: directory
   tags:
     - k8s
@@ -306,7 +312,7 @@
 - name: Create Docker Registry auth directory
   become: yes
   file:
-    path: /var/tmp/docker-registry/auth
+    path: /var/k8s/docker-registry/auth
     state: directory
   tags:
     - k8s
@@ -412,7 +418,7 @@
         persistentVolumeReclaimPolicy: Retain
         storageClassName: hostpath
         local:
-          path: /var/tmp/docker-registry
+          path: /var/k8s/docker-registry
         nodeAffinity:
           required:
             nodeSelectorTerms:
@@ -421,7 +427,7 @@
                 operator: In
                 values:
                 - k8s1
-    dest: /var/tmp/docker-registry.yaml
+    dest: /var/k8s/docker-registry.yaml
   tags:
     - k8s
 
@@ -434,19 +440,19 @@
       [distinguished_name_req]
       [v3_ca]
       subjectAltName = IP:192.168.1.11
-    dest: /var/tmp/docker-registry-ssl.conf
+    dest: /var/k8s/docker-registry-ssl.conf
   tags:
     - k8s
 
 - name: Generate Docker Registry Self-signed Certificate
   become: yes
   shell: |
-      openssl req -config /var/tmp/docker-registry-ssl.conf -extensions v3_ca -newkey rsa:4096 -nodes -sha256 -keyout /var/tmp/docker-registry.key -x509 -days 365 -subj "/CN=192.168.1.11" -out /var/tmp/docker-registry.crt
-      openssl x509 -text -in /var/tmp/docker-registry.crt
+      openssl req -config /var/k8s/docker-registry-ssl.conf -extensions v3_ca -newkey rsa:4096 -nodes -sha256 -keyout /var/k8s/docker-registry.key -x509 -days 365 -subj "/CN=192.168.1.11" -out /var/k8s/docker-registry.crt
+      openssl x509 -text -in /var/k8s/docker-registry.crt
       mkdir -p /etc/docker/certs.d/192.168.1.11:30000
-      cp /var/tmp/docker-registry.crt /etc/docker/certs.d/192.168.1.11:30000/ca.crt
-      mv /var/tmp/docker-registry.crt /var/tmp/docker-registry/certs
-      mv /var/tmp/docker-registry.key /var/tmp/docker-registry/certs
+      cp /var/k8s/docker-registry.crt /etc/docker/certs.d/192.168.1.11:30000/ca.crt
+      mv /var/k8s/docker-registry.crt /var/k8s/docker-registry/certs
+      mv /var/k8s/docker-registry.key /var/k8s/docker-registry/certs
   args:
     executable: /bin/bash
   tags:
@@ -455,8 +461,8 @@
 - name: Generate Docker Registry authentication config
   become: yes
   shell: |
-      docker run --rm --entrypoint htpasswd registry:2 -Bbn test password > /var/tmp/htpasswd
-      mv /var/tmp/htpasswd /var/tmp/docker-registry/auth/htpasswd
+      docker run --rm --entrypoint htpasswd registry:2.7.0 -Bbn test password > /var/tmp/htpasswd
+      mv /var/tmp/htpasswd /var/k8s/docker-registry/auth/htpasswd
   args:
     executable: /bin/bash
   tags:
@@ -465,7 +471,7 @@
 - name: Copy Docker Registry Self-signed Certificate
   become: yes
   shell: |
-      cp /var/tmp/docker-registry/certs/docker-registry.crt /vagrant
+      cp /var/k8s/docker-registry/certs/docker-registry.crt /vagrant
   args:
     executable: /bin/bash
   tags:

@@ -14,6 +14,10 @@ sudo systemctl restart kubelet
 SHELL
 
 Vagrant.configure(2) do |config|
+  unless Vagrant.has_plugin?("vagrant-disksize")
+    raise Vagrant::Errors::VagrantError.new, "vagrant-disksize plugin is missing. Please install it using 'vagrant plugin install vagrant-disksize' and rerun 'vagrant up'"
+  end
+
   if Vagrant.has_plugin?("vagrant-disksize")
     config.disksize.size = '40GB'
   end
@@ -50,10 +54,6 @@ Vagrant.configure(2) do |config|
         #v.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
       end
     end
-  end
-
-  if Vagrant.has_plugin?("vagrant-cachier")
-    config.cache.scope = :box
   end
 
 end
