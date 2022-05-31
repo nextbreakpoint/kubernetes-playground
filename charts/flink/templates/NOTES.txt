@@ -15,7 +15,7 @@ Submit a job to Flink service by running these commands:
   COPY some-flink-job.jar /some-flink-job.jar
   EOF
 
-  docker build -t 192.168.1.11:30000/flink-with-job-file:1.0 .
-  docker push 192.168.1.11:30000/flink-with-job-file:1.0
+  docker build -t 192.168.56.11:30000/flink-with-job-file:1.0 .
+  docker push 192.168.56.11:30000/flink-with-job-file:1.0
 
-  kubectl -n {{ .Release.Namespace | default "default" }} run flink-cli --rm -it --restart=Never --image=192.168.1.11:30000/flink-with-job-file:1.0 --overrides='{ "apiVersion": "v1", "spec": { "imagePullSecrets": [{"name": "regcred"}] } }' -- flink run -m {{ $name }}-jobmanager-headless:8081 -p 2 -c $CLASS_NAME /some-flink-job.jar $ARGS
+  kubectl -n {{ .Release.Namespace | default "default" }} run flink-cli --rm -it --restart=Never --image=192.168.56.11:30000/flink-with-job-file:1.0 --overrides='{ "apiVersion": "v1", "spec": { "imagePullSecrets": [{"name": "regcred"}] } }' -- flink run -m {{ $name }}-jobmanager-headless:8081 -p 2 -c $CLASS_NAME /some-flink-job.jar $ARGS

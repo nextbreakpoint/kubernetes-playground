@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+helm repo add projectcalico https://projectcalico.docs.tigera.io/charts
+
+kubectl create ns tigera-operator
+
+helm upgrade --install calico projectcalico/tigera-operator --version v3.23.1 -f /var/k8s/calico-values.yaml --namespace tigera-operator

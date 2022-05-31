@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 image:
-  registry: 192.168.1.11:30000/
+  registry: 192.168.56.11:30000/
   repository: nextbreakpoint/cp-kafka
   tag: 5.3.1
   pullPolicy: Always

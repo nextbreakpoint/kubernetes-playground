@@ -1,72 +1,163 @@
 # kubernetes-playground
 
-Create a standalone Kubernetes cluster with one master node and two worker nodes using Vagrant and Ansible.
+This repository contains the scripts for creating a standalone Kubernetes cluster with one master node and three worker nodes using Vagrant and Ansible.
 
-Learn how to create a private Docker Registry and how to deploy Kafka, Zookeeper and Flink using Helm charts.
 
-The installed version of Kubernetes is 1.20, but it can be changed in the Ansible script if needed.
+## Requirements
 
-## Before you start
+You will need a Linux or Mac machine with 8 cores and 16Gb RAM.
 
-Download and install Vagrant. I am using version 2.2.14.
+Install the following tools (you will need admin privileges):
 
-Download and install VirtualBox (with extension pack). I am using version 6.1.16.
+- Docker version 20.10.14 or later
 
-I tested my scripts on Mac, but the process should be the same on Linux. Not sure about Windows.
+- Vagrant version 2.2.19 or later
 
-## Install plugins
+- VirtualBox (with extension pack) version 6.1.34 or later
 
 Install the vagrant-disksize plugin:
 
     vagrant plugin install vagrant-disksize
 
+
 ## Create nodes
 
-Create and start the nodes:
+Create the nodes of the Kubernetes cluster with the command:
 
-    vagrant up
+    vagrant --memory=4096 --disk=10Gb up
+
+Wait until the machine are provisioned. You can grab a coffee.
 
 Verify that the nodes are running:
 
-    vagrant status k8s1 k8s2 k8s3
+    vagrant status
 
-Open a shell on the master node:
+    Current machine states:
 
-    vagrant ssh k8s1
+    k8s-master                running (virtualbox)
+    k8s-worker-1              running (virtualbox)
+    k8s-worker-2              running (virtualbox)
+    k8s-worker-3              running (virtualbox)
 
-You will need the shell to complete the setup.
 
 ## Install CNI plugin (required)
 
-Execute script on master node:
+Open a shell on the master node:
+
+    vagrant ssh k8s-master
+
+Start Calico with the command:
 
     start-calico
 
-## Verify nodes are ready
+Wait until Calico has started. Time for a second coffee?
 
-Execute command on master node:
+Verify that the nodes are ready:
 
     kubectl get nodes -o wide
 
-    NAME   STATUS   ROLES                  AGE     VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
-    k8s1   Ready    control-plane,master   6m7s    v1.20.0   192.168.1.11   <none>        Ubuntu 16.04.7 LTS   4.4.0-197-generic   docker://20.10.0
-    k8s2   Ready    <none>                 3m51s   v1.20.0   192.168.1.12   <none>        Ubuntu 16.04.7 LTS   4.4.0-197-generic   docker://20.10.0
-    k8s3   Ready    <none>                 2m2s    v1.20.0   192.168.1.13   <none>        Ubuntu 16.04.7 LTS   4.4.0-197-generic   docker://20.10.0
+    NAME           STATUS   ROLES           AGE     VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+    k8s-master     Ready    control-plane   20m     v1.24.1   192.168.56.10   <none>        Ubuntu 20.04.4 LTS   5.4.0-113-generic   cri-o://1.24.0
+    k8s-worker-1   Ready    <none>          18m     v1.24.1   192.168.56.11   <none>        Ubuntu 20.04.4 LTS   5.4.0-113-generic   cri-o://1.24.0
+    k8s-worker-2   Ready    <none>          10m     v1.24.1   192.168.56.12   <none>        Ubuntu 20.04.4 LTS   5.4.0-113-generic   cri-o://1.24.0
+    k8s-worker-3   Ready    <none>          7m42s   v1.24.1   192.168.56.13   <none>        Ubuntu 20.04.4 LTS   5.4.0-113-generic   cri-o://1.24.0
 
-## Create the default Storage Class
+Verify that all pods are running:
 
-Execute script on master node:
+    kubectl get pods --all-namespaces
+
+    NAMESPACE              NAME                                         READY   STATUS    RESTARTS   AGE
+    calico-apiserver       calico-apiserver-6d79f588b-5m7ft             1/1     Running   0          39s
+    calico-apiserver       calico-apiserver-6d79f588b-7gm49             1/1     Running   0          39s
+    calico-system          calico-kube-controllers-68884f975d-22vb2     1/1     Running   0          4m11s
+    calico-system          calico-node-cqgng                            1/1     Running   0          4m11s
+    calico-system          calico-node-hzcd7                            1/1     Running   0          4m11s
+    calico-system          calico-node-szcr9                            1/1     Running   0          4m11s
+    calico-system          calico-node-wc88d                            1/1     Running   0          4m11s
+    calico-system          calico-typha-8588f6986-t9mz7                 1/1     Running   0          4m11s
+    calico-system          calico-typha-8588f6986-wfnbw                 1/1     Running   0          4m2s
+    kube-system            coredns-6d4b75cb6d-44sqj                     1/1     Running   0          20m
+    kube-system            coredns-6d4b75cb6d-sv7lg                     1/1     Running   0          20m
+    kube-system            etcd-k8s-master                              1/1     Running   0          20m
+    kube-system            kube-apiserver-k8s-master                    1/1     Running   0          20m
+    kube-system            kube-controller-manager-k8s-master           1/1     Running   0          20m
+    kube-system            kube-proxy-465fh                             1/1     Running   0          18m
+    kube-system            kube-proxy-gbtfv                             1/1     Running   0          10m
+    kube-system            kube-proxy-kltht                             1/1     Running   0          20m
+    kube-system            kube-proxy-ms5gq                             1/1     Running   0          7m54s
+    kube-system            kube-scheduler-k8s-master                    1/1     Running   0          20m
+    kube-system            metrics-server-559ddb567b-q24zh              1/1     Running   0          20m
+    kubernetes-dashboard   dashboard-metrics-scraper-7bfdf779ff-gtjfh   1/1     Running   0          20m
+    kubernetes-dashboard   kubernetes-dashboard-6cdd697d84-797vv        1/1     Running   0          20m
+    tigera-operator        tigera-operator-5fb55776df-8849z             1/1     Running   0          4m29s
+
+
+## Access Kubernetes from any machine
+
+Execute the kubectl command passing the generated kubeconfig:
+
+    kubectl --kubeconfig=admin.conf get pods --all-namespaces
+
+
+## Enable pods scheduling on Master node (optional)
+
+You will have to modify the node taint to schedule pods on the master node.
+
+Execute this command on the master node:
+
+    taint-nodes
+
+
+## Expose Kubernetes Dashboard on the Host
+
+Execute this command on the host:
+
+    kubectl --kubeconfig=admin.conf proxy
+
+Execute this command on the master node to get an authentication token:
+
+    dashboard-token
+
+Use the authentication token to access the dashboard:
+
+    http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/overview?namespace=_all
+
+
+## Stop nodes
+
+Execute this command on the host to stop the nodes:
+
+    vagrant halt
+
+
+## Resume nodes
+
+Execute this command on the host to resume the nodes:
+
+    vagrant up
+
+
+## Destroy nodes
+
+Execute this command on the host to destroy the nodes:
+
+    vagrant destroy -f
+
+
+## Create the default Storage Class (optional)
+
+You will need a Storage Class to create Persistent Volumes which are mapped to directories of the node.
+
+Create the required resources with the command:
 
     create-storage-class
 
-A Storage Class is required in order to create Persistent Volumes which are mapped to directories of the node.
-
-A Persistent Volume configuration for creating a volume on node k8s1 looks like:
+The Persistent Volume configuration for a volume on node k8s-worker-1 looks like:
 
     apiVersion: v1
     kind: PersistentVolume
     metadata:
-      name: local-pv-k8s1-1
+      name: disk1
     spec:
       capacity:
         storage: 5Gi
@@ -75,7 +166,7 @@ A Persistent Volume configuration for creating a volume on node k8s1 looks like:
       persistentVolumeReclaimPolicy: Retain
       storageClassName: hostpath
       local:
-        path: /var/tmp/disk1
+        path: /volumes/disk1
       nodeAffinity:
         required:
           nodeSelectorTerms:
@@ -83,133 +174,71 @@ A Persistent Volume configuration for creating a volume on node k8s1 looks like:
             - key: kubernetes.io/hostname
               operator: In
               values:
-              - k8s1
+              - k8s-worker-1
 
 Create the volume with the command:
 
-    kubectl create -f pv-k8s1-1.yaml
+    kubectl create -f volumes.yaml
 
-The persistent volume will be assigned to any pod running on node k8s1 which requests a volume with a Persistent Volume Claim.
+The persistent volume will be assigned to any pod running on node k8s-worker-1 which has a valid Persistent Volume Claim.
 
-## Verify pods are running
 
-Execute command on master node:
+## Deploy the Docker Registry (optional)
 
-    kubectl get pods --all-namespaces
+You might want to install a Docker Registry if you don't have a registry already that you can use for storing your images.
 
-    NAMESPACE              NAME                                         READY   STATUS    RESTARTS   AGE
-    kube-system            calico-kube-controllers-744cfdf676-m4s4s     1/1     Running   0          84s
-    kube-system            calico-node-8gpcx                            1/1     Running   0          84s
-    kube-system            calico-node-8m49s                            1/1     Running   0          84s
-    kube-system            calico-node-bnkxn                            1/1     Running   0          84s
-    kube-system            coredns-74ff55c5b-qzg58                      1/1     Running   0          5m29s
-    kube-system            coredns-74ff55c5b-rjswg                      1/1     Running   0          5m29s
-    kube-system            etcd-k8s1                                    1/1     Running   0          5m42s
-    kube-system            kube-apiserver-k8s1                          1/1     Running   0          5m42s
-    kube-system            kube-controller-manager-k8s1                 1/1     Running   0          5m42s
-    kube-system            kube-proxy-k9cdk                             1/1     Running   0          100s
-    kube-system            kube-proxy-mc7px                             1/1     Running   0          3m29s
-    kube-system            kube-proxy-qbl7z                             1/1     Running   0          5m29s
-    kube-system            kube-scheduler-k8s1                          1/1     Running   0          5m42s
-    kube-system            metrics-server-bc4467d77-mh2zl               1/1     Running   0          5m29s
-    kubernetes-dashboard   dashboard-metrics-scraper-79c5968bdc-kqvb6   1/1     Running   0          5m29s
-    kubernetes-dashboard   kubernetes-dashboard-7448ffc97b-pj2cd        1/1     Running   0          5m29s
+### Install the Docker Registry
 
-## Access Kubernetes cluster from host
+Open a shell on the worker node 1:
 
-Execute kubectl command passing kubeconfig:
+    vagrant ssh k8s-worker-1
 
-    kubectl --kubeconfig=admin.conf get pods --all-namespaces
+Install the Docker Registry with the command:
 
-## Enable pods scheduling on Master node (optional)
+    registry-create
 
-Modify nodes taint to enable pods scheduling on master node:
+### Push images to the Docker Registry
 
-    taint-nodes
-
-## Get token for accessing Dashboard
-
-Execute script on master node and get authentication token:
-
-    dashboard-token
-
-## Expose Dashboard on host
-
-Execute script on host:
-
-    kubectl --kubeconfig=admin.conf proxy
-
-Use authentication token to access dashboard:
-
-    http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/#/overview?namespace=default
-
-## Stop nodes
-
-Execute command on host:
-
-    vagrant halt
-
-## Resume nodes
-
-Execute command on host:
-
-    vagrant up
-
-## Destroy nodes
-
-Execute command on host:
-
-    vagrant destroy -f
-
-## Create local Docker Registry
-
-Please enable pods scheduling on master node.
-
-Execute script on master node:
-
-    docker-registry-create
-
-## Delete local Docker Registry
-
-Execute script on master node:
-
-    docker-registry-delete
-
-## Push images to local Docker Registry
-
-Add the self-signed certificate docker-registry.crt to your trusted CA list.
+Add the self-signed certificate docker-registry.crt to your trusted CA list:
 
     // Linux
-    cp docker-registry.crt /etc/docker/certs.d/192.168.1.11:30000/ca.crt
+    cp docker-registry.crt /etc/docker/certs.d/192.168.56.10:30000/ca.crt
 
-    // MacOS - Docker for Mac
+    // MacOS
     security add-trusted-cert -d -r trustRoot -k /Users/$USER/Library/Keychains/login.keychain docker-registry.crt
 
-You will have to restart Docker for Mac to sync the certificates.
+* You will have to restart Docker for Mac to sync the certificates.
 
-Push Docker image from host with commands:
+Push a Docker image from the host to the registry:
 
-    docker -t <image>:<version> 192.168.1.11:30000/<image>:<version>
-    docker login --username test --password password 192.168.1.11:30000
-    docker push 192.168.1.11:30000/<image>:<version>
+    docker -t <image>:<version> 192.168.56.10:30000/<image>:<version>
+    docker login --username test --password password 192.168.56.10:30000
+    docker push 192.168.56.10:30000/<image>:<version>
 
-## Create Pull Secrets for local Docker Registry
+### Create pull secrets for the Docker Registry
 
-Create secrets for pulling images from local Docker Registry:
+Create secrets for pulling images from the registry:
 
-    kubectl --kubeconfig=admin.conf create secret docker-registry regcred --docker-server=192.168.1.11:30000 --docker-username=test --docker-password=password --docker-email=<your-email>
+    kubectl --kubeconfig=admin.conf create secret docker-registry regcred --docker-server=192.168.56.10:30000 --docker-username=test --docker-password=password --docker-email=<your-email>
 
-Configure pull secrets for default service account:
+Configure pull secrets for the default service account:
 
     kubectl --kubeconfig=admin.conf patch serviceaccount default -n default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
 
+### Uninstall the Docker Registry
+
+Uninstall the Docker Registry with the command:
+
+    registry-delete
+
+
 ## Deploy Kafka, Zookeeper and Flink using Helm
 
-The directory charts contains Helm charts for Kafka, Zookeeper, and Flink.
+The directory charts contains Helm charts for installing Kafka, Zookeeper, and Flink.
 
-The charts depends on Docker images which must be created before installing the charts.
+The charts depends on custom Docker images which must be created before installing the charts.
 
-Create Docker images for Kafka, Zookeeper, and Flink:
+Create the Docker images for Kafka, Zookeeper, and Flink:
 
     ./build-images.sh
 
@@ -219,13 +248,17 @@ Install Kafka, Zookeeper, and Flink charts:
     helm --kubeconfig=admin.conf install kafka charts/kafka
     helm --kubeconfig=admin.conf install flink charts/flink
 
-Delete Kafka, Zookeeper, and Flink charts:
+Uninstall Kafka, Zookeeper, and Flink charts:
 
     helm --kubeconfig=admin.conf uninstall zookeeper
     helm --kubeconfig=admin.conf uninstall kafka
     helm --kubeconfig=admin.conf uninstall flink
 
-## Credits
 
-This work is partially based on:
-https://github.com/davidkbainbridge/k8s-playground
+## Documentation
+
+- https://www.vagrantup.com
+- https://www.virtualbox.org
+- https://docs.ansible.com/ansible/latest/index.html
+- https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html
+- https://kubernetes.io/docs/home/

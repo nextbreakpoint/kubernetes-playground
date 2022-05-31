@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+kubectl -n kubernetes-dashboard get secret -o json | jq -r '.items[] | select(.metadata.name | test("admin-user-token")) | .data.token' | base64 -d

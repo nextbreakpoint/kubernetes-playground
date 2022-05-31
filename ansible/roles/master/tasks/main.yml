@@ -1,0 +1,288 @@
+---
+- name: Pull Kubernetes images
+  become: yes
+  command: "kubeadm config images pull"
+  tags:
+    - k8s
+
+- name: Check if Kubernetes config exists
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubernetes_config
+
+- name: Initialise kubeadm
+  when: kubernetes_config.stat.exists == false
+  become: yes
+  command: "kubeadm init --pod-network-cidr=172.43.0.0/16 --apiserver-advertise-address={{ network }}.10 --kubernetes-version=1.24.1 --cri-socket unix:///var/run/crio/crio.sock"
+  tags:
+    - k8s
+
+- name: Create StorageClass resources
+  become: yes
+  copy:
+    content: |
+      kind: StorageClass
+      apiVersion: storage.k8s.io/v1
+      metadata:
+        name: hostpath
+      provisioner: kubernetes.io/no-provisioner
+      volumeBindingMode: WaitForFirstConsumer
+      ---
+      kind: StorageClass
+      apiVersion: storage.k8s.io/v1
+      metadata:
+        name: standard
+      provisioner: kubernetes.io/no-provisioner
+      volumeBindingMode: WaitForFirstConsumer
+    dest: /var/k8s/storageclass-config.yaml
+  tags:
+    - k8s
+
+- name: Export Kubernetes config into /vagrant
+  become: yes
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /vagrant/admin.conf
+    owner: vagrant
+    group: vagrant
+    mode: 0600
+  tags:
+    - k8s
+
+- name: Copy config to home directory
+  become: yes
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/vagrant/admin.conf
+    owner: vagrant
+    group: vagrant
+    mode: 0600
+  tags:
+    - k8s
+
+- name: Update environment
+  become: yes
+  lineinfile:
+    path: /home/vagrant/.bashrc
+    regexp: '^export KUBECONFIG='
+    line: 'export KUBECONFIG=/home/vagrant/admin.conf'
+    state: present
+  tags:
+    - k8s
+
+- name: Create Calico configuration
+  become: yes
+  copy:
+    content: |
+      installation:
+        cni:
+          type: Calico
+        calicoNetwork:
+          bgp: Disabled
+          ipPools:
+          - cidr: 172.43.0.0/16
+            encapsulation: VXLAN
+    dest: /var/k8s/calico-values.yaml
+  tags:
+    - k8s
+
+- name: Copy Calico script
+  become: yes
+  copy:
+    src: files/{{ item }}
+    dest: /usr/local/bin/{{ item }}
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - "start-calico"
+  tags:
+    - k8s
+
+- name: Copy utility scripts
+  become: yes
+  copy:
+    src: files/{{ item }}
+    dest: /usr/local/bin/{{ item }}
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - "dashboard-token"
+    - "kubeadm-hash"
+    - "kubeadm-token"
+    - "taint-nodes"
+    - "create-storage-class"
+    - "create-join-script"
+  tags:
+    - k8s
+
+- name: Create .kube directory
+  become: yes
+  file:
+    path: /home/vagrant/.kube
+    state: directory
+  tags:
+    - k8s
+
+- name: Copy config into .kube directory
+  become: yes
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/vagrant/.kube/config
+    owner: vagrant
+    group: vagrant
+    mode: 0600
+  tags:
+    - k8s
+
+- name: List Kubernetes nodes
+  become: yes
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf get nodes"
+  register: nodes
+  tags:
+    - k8s
+- debug: var=nodes.stdout_lines
+
+- name: Create Kubernetes Dashboard's RBAC script
+  become: yes
+  copy:
+    content: |
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: admin-user
+        namespace: kubernetes-dashboard
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: admin-user
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-admin
+      subjects:
+      - kind: ServiceAccount
+        name: admin-user
+        namespace: kubernetes-dashboard
+      ---
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: admin-user-token
+        namespace: kubernetes-dashboard
+        annotations:
+          kubernetes.io/service-account.name: admin-user
+      type: kubernetes.io/service-account-token
+    dest: /var/k8s/dashboard-rbac-config.yaml
+  tags:
+    - k8s
+
+- name: Download Kubernetes Dashboard's deployment script
+  become: yes
+  get_url:
+    url: https://raw.githubusercontent.com/kubernetes/dashboard/v2.5.0/aio/deploy/recommended.yaml
+    dest: /var/k8s/kubernetes-dashboard.yaml
+    mode: 0444
+  tags:
+    - k8s
+
+- name: Install Kubernetes Dashboard
+  become: yes
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/k8s/kubernetes-dashboard.yaml"
+  tags:
+    - k8s
+
+- name: Install Kubernetes Dashboard RBAC
+  become: yes
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/k8s/dashboard-rbac-config.yaml"
+  tags:
+    - k8s
+
+- name: Download Helm's release
+  become: yes
+  get_url:
+    url: https://get.helm.sh/helm-v3.9.0-linux-amd64.tar.gz
+    dest: /var/k8s/helm.tar.gz
+    mode: 0444
+  tags:
+    - k8s
+
+- name: Create Helm's directory
+  become: yes
+  file:
+    path: /var/k8s/helm
+    state: directory
+  tags:
+    - k8s
+
+- name: Decompress Helm's files
+  become: yes
+  unarchive:
+    src: /var/k8s/helm.tar.gz
+    dest: /var/k8s/helm
+  tags:
+    - k8s
+
+- name: Install Helm
+  become: yes
+  command: "cp /var/k8s/helm/linux-amd64/helm /usr/local/bin"
+  tags:
+    - k8s
+
+- name: Add charts repository
+  become: yes
+  command: "helm repo add stable https://charts.helm.sh/stable"
+  tags:
+    - k8s
+
+- name: Download Metrics Server's deployment script
+  become: yes
+  get_url:
+    url: https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.6.0/components.yaml
+    dest: /var/k8s/metrics-server-components.yaml
+    mode: 0444
+  tags:
+    - k8s
+
+- name: Modify Metrics Server's deployment script
+  become: yes
+  blockinfile:
+    dest: /var/k8s/metrics-server-components.yaml
+    insertafter: '--secure-port=4443'
+    block: "        - --kubelet-insecure-tls"
+    backup: yes
+  tags:
+    - k8s
+
+- name: Print Metrics Server's deployment script
+  become: yes
+  command: "cat /var/k8s/metrics-server-components.yaml"
+  register: cat
+  tags:
+    - k8s
+- debug: var=cat.stdout_lines
+
+- name: Install Metrics Server
+  become: yes
+  command: "kubectl --kubeconfig=/home/vagrant/admin.conf apply -f /var/k8s/metrics-server-components.yaml"
+  tags:
+    - k8s
+
+- name: Create join script
+  become: yes
+  command: "create-join-script"
+  tags:
+    - k8s
+
+- name: Copy join script
+  become: yes
+  copy:
+    src: /home/vagrant/join.sh
+    dest: /vagrant/join.sh
+    owner: vagrant
+    group: vagrant
+    mode: 0600
+  tags:
+    - k8s

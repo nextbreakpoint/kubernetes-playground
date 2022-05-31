@@ -10,7 +10,7 @@
   tags:
     - k8s
 
-- name: Update Environment
+- name: Update environment
   become: yes
   lineinfile:
     path: /home/vagrant/.bashrc
@@ -31,18 +31,8 @@
   tags:
     - k8s
 
-- name: Join Kubernetes Cluster
+- name: Join Kubernetes cluster
   become: yes
   command: "sh /home/vagrant/join.sh"
-  tags:
-    - k8s
-
-- name: Copy Docker Registry Self-signed Certificate
-  become: yes
-  shell: |
-      mkdir -p /etc/docker/certs.d/192.168.1.11:30000
-      cp /vagrant/docker-registry.crt /etc/docker/certs.d/192.168.1.11:30000/ca.crt
-  args:
-    executable: /bin/bash
   tags:
     - k8s

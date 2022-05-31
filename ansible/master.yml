@@ -2,5 +2,5 @@
   remote_user: vagrant
   serial: 1
   roles:
-    - k8s-base
-    - k8s-master
+    - base
+    - master

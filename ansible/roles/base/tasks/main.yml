@@ -1,0 +1,204 @@
+---
+- name: Remove default host
+  become: yes
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '^127\.0\.1\.1\s+k8s.*$'
+    state: absent
+  tags:
+    - k8s
+
+- name: Configure hosts
+  become: yes
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ item.ip }} {{ item.name }}"
+  with_items:
+    - { ip: "{{ network }}.10", name: "k8s-master" }
+    - { ip: "{{ network }}.11", name: "k8s-worker-1" }
+    - { ip: "{{ network }}.12", name: "k8s-worker-2" }
+    - { ip: "{{ network }}.13", name: "k8s-worker-3" }
+  tags:
+    - k8s
+
+- name: Install CRI-O library repository key
+  apt_key:
+    url: https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/Release.key
+    state: present
+
+- name: Ensure CRI-O library repository
+  become: yes
+  apt_repository:
+    repo: 'deb [arch=amd64] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_20.04/ /'
+    state: present
+    update_cache: yes
+  tags:
+    - k8s
+
+- name: Install CRI-O runtime repository key
+  apt_key:
+    url: https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/1.24/xUbuntu_20.04/Release.key
+    state: present
+
+- name: Add CRI-O runtime repository
+  become: yes
+  apt_repository:
+    repo: 'deb [arch=amd64] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/1.24/xUbuntu_20.04/ /'
+    state: present
+    update_cache: yes
+  tags:
+    - k8s
+
+- name: Install Google Cloud repository key
+  become: yes
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+  tags:
+    - k8s
+
+- name: Add Kubernetes repository
+  become: yes
+  apt_repository:
+    repo: 'deb http://apt.kubernetes.io/ kubernetes-xenial main'
+    state: present
+    update_cache: yes
+  tags:
+    - k8s
+
+- name: Install tools
+  become: yes
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - curl
+    - jq
+    - bc
+    - gawk
+    - apt-transport-https
+    - apache2-utils
+  tags:
+    - k8s
+
+- name: Update system
+  become: yes
+  command: "apt-get update -y"
+  tags:
+    - k8s
+
+- name: Install container runtime
+  become: yes
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - cri-o
+    - cri-o-runc
+  tags:
+    - k8s
+
+- name: Reload system daemons
+  become: yes
+  command:
+    argv:
+      - systemctl
+      - daemon-reload
+  tags:
+    - k8s
+
+- name: Ensure container runtime is running
+  become: yes
+  command:
+    argv:
+      - systemctl
+      - enable
+      - crio
+  tags:
+    - k8s
+
+- name: Start container runtime
+  become: yes
+  command:
+    argv:
+      - systemctl
+      - start
+      - crio
+  tags:
+    - k8s
+
+- name: Install kubeadm and kubelet
+  become: yes
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - kubelet={{ kubernetes_version }}-00
+    - kubeadm={{ kubernetes_version }}-00
+  tags:
+    - k8s
+
+- name: Copy cleanup script
+  become:
+  copy:
+    src: files/clean-k8s
+    dest: /usr/local/bin
+    mode: 0755
+    owner: root
+    group: root
+  tags:
+    - k8s
+
+- name: Ensure swap is off
+  become: yes
+  command: "swapoff -a"
+  tags:
+    - k8s
+
+- name: Remove swap from fstab
+  become: yes
+  lineinfile:
+    dest: /etc/fstab
+    regexp: 'swap'
+    state: absent
+  tags:
+    - k8s
+
+- name: Create directories
+  become: yes
+  file:
+    path: "{{ item.path }}"
+    state: directory
+  with_items:
+    - { path: "/var/k8s" }
+  tags:
+    - k8s
+
+- name: Ensure module br_netfilter is loaded
+  become: yes
+  command:
+    argv:
+      - modprobe
+      - br_netfilter
+  tags:
+    - k8s
+
+- name: Configure net.ipv4.ip_forward
+  become: yes
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    state: present
+
+- name: Configure net.bridge.bridge-nf-call-iptables
+  become: yes
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: 1
+    state: present
+
+- name: Configure APT
+  become: yes
+  shell: "echo 'Acquire::Retries \"3\";' > /etc/apt/apt.conf.d/80-retries"
+  tags:
+    - k8s

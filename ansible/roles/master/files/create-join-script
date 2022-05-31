@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+echo "kubeadm join 192.168.56.10:6443 --token $(kubeadm-token) --discovery-token-ca-cert-hash sha256:$(kubeadm-hash)" > /home/vagrant/join.sh

@@ -1,3 +1,5 @@
 #!/bin/bash
 
+set -e
+
 kubectl delete -f /var/k8s/docker-registry.yaml
