@@ -228,29 +228,6 @@ Configure pull secrets for the default service account:
     kubectl --kubeconfig=admin.conf patch serviceaccount default -n default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
 
 
-## Deploy Kafka, Zookeeper and Flink using Helm
-
-The directory charts contains Helm charts for installing Kafka, Zookeeper, and Flink.
-
-The charts depends on custom Docker images which must be created before installing the charts.
-
-Create the Docker images for Kafka, Zookeeper, and Flink:
-
-    ./build-images.sh
-
-Install Kafka, Zookeeper, and Flink charts:
-
-    helm --kubeconfig=admin.conf install zookeeper charts/zookeeper
-    helm --kubeconfig=admin.conf install kafka charts/kafka
-    helm --kubeconfig=admin.conf install flink charts/flink
-
-Uninstall Kafka, Zookeeper, and Flink charts:
-
-    helm --kubeconfig=admin.conf uninstall zookeeper
-    helm --kubeconfig=admin.conf uninstall kafka
-    helm --kubeconfig=admin.conf uninstall flink
-
-
 ## Documentation
 
 - https://www.vagrantup.com
