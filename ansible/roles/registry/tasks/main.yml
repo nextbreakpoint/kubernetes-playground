@@ -212,7 +212,6 @@
     group: root
     mode: 0755
   with_items:
-    - "registry-create"
-    - "registry-delete"
+    - "docker-registry"
   tags:
     - k8s

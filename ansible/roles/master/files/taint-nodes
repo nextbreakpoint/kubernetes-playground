@@ -1,5 +1,0 @@
-#!/bin/bash
-
-set -e
-
-kubectl taint nodes --all node-role.kubernetes.io/master-

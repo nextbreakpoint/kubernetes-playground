@@ -86,19 +86,6 @@
   tags:
     - k8s
 
-- name: Copy Calico script
-  become: yes
-  copy:
-    src: files/{{ item }}
-    dest: /usr/local/bin/{{ item }}
-    owner: root
-    group: root
-    mode: 0755
-  with_items:
-    - "start-calico"
-  tags:
-    - k8s
-
 - name: Copy utility scripts
   become: yes
   copy:
@@ -108,11 +95,12 @@
     group: root
     mode: 0755
   with_items:
+    - "calico"
     - "dashboard-token"
     - "kubeadm-hash"
     - "kubeadm-token"
-    - "taint-nodes"
-    - "create-storage-class"
+    - "schedule-pods"
+    - "storage-class"
     - "create-join-script"
   tags:
     - k8s
@@ -272,7 +260,7 @@
 
 - name: Create join script
   become: yes
-  command: "create-join-script"
+  command: "create-join-script --master={{ network }}.10"
   tags:
     - k8s
 

@@ -8,16 +8,22 @@
   tags:
     - k8s
 
-- name: Configure hosts
+- name: Configure master hostname
   become: yes
   lineinfile:
     dest: /etc/hosts
     line: "{{ item.ip }} {{ item.name }}"
   with_items:
     - { ip: "{{ network }}.10", name: "k8s-master" }
-    - { ip: "{{ network }}.11", name: "k8s-worker-1" }
-    - { ip: "{{ network }}.12", name: "k8s-worker-2" }
-    - { ip: "{{ network }}.13", name: "k8s-worker-3" }
+  tags:
+    - k8s
+
+- name: Configure workers hostnames
+  become: yes
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ network + '.%s k8s-worker-%s' | format(item + 10, item) }}"
+  loop: "{{ range(1, nodes | int + 1, 1) | list }}"
   tags:
     - k8s
 

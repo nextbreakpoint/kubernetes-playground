@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+
+COMMAND=""
+
+for i in "$@"; do
+  case $i in
+    --enable)
+      COMMAND="ENABLE"
+      shift
+      ;;
+    --disable)
+      COMMAND="DISABLE"
+      shift
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [[ $COMMAND = "ENABLE" ]]; then
+  kubectl taint nodes k8s-master node-role.kubernetes.io/master:-
+fi
+
+if [[ $COMMAND = "DISABLE" ]]; then
+  kubectl taint nodes k8s-master node-role.kubernetes.io/master:NoSchedule
+fi

@@ -31,7 +31,13 @@
   tags:
     - k8s
 
+- name: Check if Kubernetes CA exists
+  stat:
+    path: /etc/kubernetes/pki/ca.crt
+  register: kubernetes_ca
+
 - name: Join Kubernetes cluster
+  when: kubernetes_ca.stat.exists == false
   become: yes
   command: "sh /home/vagrant/join.sh"
   tags:

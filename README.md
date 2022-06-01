@@ -1,6 +1,6 @@
 # kubernetes-playground
 
-This repository contains the scripts for creating a standalone Kubernetes cluster with one master node and three worker nodes using Vagrant and Ansible.
+This repository contains the scripts for creating a standalone Kubernetes cluster with one master node and multiple worker nodes. The cluster is not meant to be used for production, but to test distributed applications which require multiple nodes. The cluster is provisioned using Vagrant, VirtualBox, and Ansible.
 
 
 ## Requirements
@@ -24,7 +24,7 @@ Install the vagrant-disksize plugin:
 
 Create the nodes of the Kubernetes cluster with the command:
 
-    vagrant --memory=4096 --disk=10Gb up
+    vagrant --nodes=2 --cpus=2 --memory=4096 --disk=10 up
 
 Wait until the machine are provisioned. You can grab a coffee.
 
@@ -37,7 +37,10 @@ Verify that the nodes are running:
     k8s-master                running (virtualbox)
     k8s-worker-1              running (virtualbox)
     k8s-worker-2              running (virtualbox)
-    k8s-worker-3              running (virtualbox)
+
+If your host machine has enough resources, you can try with more nodes, cpus, and memory:
+
+    vagrant --nodes=3 --cpus=4 --memory=16384 --disk=40 up
 
 
 ## Install CNI plugin (required)
@@ -46,9 +49,9 @@ Open a shell on the master node:
 
     vagrant ssh k8s-master
 
-Start Calico with the command:
+Intall Calico with the command:
 
-    start-calico
+    calico --install
 
 Wait until Calico has started. Time for a second coffee?
 
@@ -60,7 +63,6 @@ Verify that the nodes are ready:
     k8s-master     Ready    control-plane   20m     v1.24.1   192.168.56.10   <none>        Ubuntu 20.04.4 LTS   5.4.0-113-generic   cri-o://1.24.0
     k8s-worker-1   Ready    <none>          18m     v1.24.1   192.168.56.11   <none>        Ubuntu 20.04.4 LTS   5.4.0-113-generic   cri-o://1.24.0
     k8s-worker-2   Ready    <none>          10m     v1.24.1   192.168.56.12   <none>        Ubuntu 20.04.4 LTS   5.4.0-113-generic   cri-o://1.24.0
-    k8s-worker-3   Ready    <none>          7m42s   v1.24.1   192.168.56.13   <none>        Ubuntu 20.04.4 LTS   5.4.0-113-generic   cri-o://1.24.0
 
 Verify that all pods are running:
 
@@ -105,7 +107,7 @@ You will have to modify the node taint to schedule pods on the master node.
 
 Execute this command on the master node:
 
-    taint-nodes
+    schedule-pods --enable
 
 
 ## Expose Kubernetes Dashboard on the Host
@@ -127,21 +129,21 @@ Use the authentication token to access the dashboard:
 
 Execute this command on the host to stop the nodes:
 
-    vagrant halt
+    vagrant --nodes=2 halt
 
 
 ## Resume nodes
 
 Execute this command on the host to resume the nodes:
 
-    vagrant up
+    vagrant --nodes=2 up
 
 
 ## Destroy nodes
 
 Execute this command on the host to destroy the nodes:
 
-    vagrant destroy -f
+    vagrant --nodes=2 destroy -f
 
 
 ## Create the default Storage Class (optional)
@@ -150,7 +152,7 @@ You will need a Storage Class to create Persistent Volumes which are mapped to d
 
 Create the required resources with the command:
 
-    create-storage-class
+    storage-class --install
 
 The Persistent Volume configuration for a volume on node k8s-worker-1 looks like:
 
@@ -195,7 +197,7 @@ Open a shell on the worker node 1:
 
 Install the Docker Registry with the command:
 
-    registry-create
+    docker-registry --install
 
 ### Push images to the Docker Registry
 
@@ -224,12 +226,6 @@ Create secrets for pulling images from the registry:
 Configure pull secrets for the default service account:
 
     kubectl --kubeconfig=admin.conf patch serviceaccount default -n default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
-
-### Uninstall the Docker Registry
-
-Uninstall the Docker Registry with the command:
-
-    registry-delete
 
 
 ## Deploy Kafka, Zookeeper and Flink using Helm

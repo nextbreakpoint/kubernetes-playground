@@ -1,5 +1,0 @@
-#!/bin/bash
-
-set -e
-
-kubectl create -f /var/k8s/docker-registry.yaml

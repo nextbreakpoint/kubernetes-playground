@@ -16,21 +16,29 @@ SHELL
 require 'getoptlong'
 
 opts = GetoptLong.new(
+  [ '--cpus', GetoptLong::OPTIONAL_ARGUMENT ],
   [ '--memory', GetoptLong::OPTIONAL_ARGUMENT ],
-  [ '--disk', GetoptLong::OPTIONAL_ARGUMENT ]
+  [ '--disk', GetoptLong::OPTIONAL_ARGUMENT ],
+  [ '--nodes', GetoptLong::OPTIONAL_ARGUMENT ]
 )
 
 opts.ordering=(GetoptLong::REQUIRE_ORDER)
 
-memory='4096'
-disk='40GB'
+$cpus=2
+$memory=4096
+$disk=40
+$nodes=2
 
 opts.each do |opt, arg|
   case opt
+  when '--cpus'
+      $cpus=arg.to_i
     when '--memory'
-      memory=arg
+      $memory=arg.to_i
     when '--disk'
-      disk=arg
+      $disk=arg.to_i
+    when '--nodes'
+      $nodes=arg.to_i
   end
 end
 
@@ -40,7 +48,7 @@ Vagrant.configure(2) do |config|
   end
 
   if Vagrant.has_plugin?("vagrant-disksize")
-    config.disksize.size = "#{disk}"
+    config.disksize.size = "#{$disk}GB"
   end
 
   config.vm.define "k8s-master" do |s|
@@ -50,7 +58,7 @@ Vagrant.configure(2) do |config|
     s.vm.provision :shell,
       inline: $bootstrap_ansible
     s.vm.provision :shell,
-      inline: "PYTHONUNBUFFERED=1 ansible-playbook /vagrant/ansible/master.yml -c local --extra-vars 'network=192.168.56 kubernetes_version=1.24.1'"
+      inline: "PYTHONUNBUFFERED=1 ansible-playbook /vagrant/ansible/master.yml -c local --extra-vars 'nodes=#{$nodes} network=192.168.56 kubernetes_version=1.24.1'"
     s.vm.provision :shell,
       inline: "echo 'KUBELET_EXTRA_ARGS=--node-ip=192.168.56.10' | sudo tee /etc/default/kubelet"
     s.vm.provision :shell,
@@ -70,7 +78,7 @@ Vagrant.configure(2) do |config|
     end
   end
 
-  (1..3).each do |i|
+  (1..$nodes).each do |i|
     config.vm.define "k8s-worker-#{i}" do |s|
       s.ssh.forward_agent = true
       s.vm.box = "ubuntu/focal64"
@@ -78,7 +86,7 @@ Vagrant.configure(2) do |config|
       s.vm.provision :shell,
         inline: $bootstrap_ansible
       s.vm.provision :shell,
-        inline: "PYTHONUNBUFFERED=1 ansible-playbook /vagrant/ansible/worker.yml -c local --extra-vars 'network=192.168.56 kubernetes_version=1.24.1'"
+        inline: "PYTHONUNBUFFERED=1 ansible-playbook /vagrant/ansible/worker.yml -c local --extra-vars 'nodes=#{$nodes} network=192.168.56 kubernetes_version=1.24.1'"
       s.vm.provision :shell,
         inline: "echo 'KUBELET_EXTRA_ARGS=--node-ip=192.168.56.#{i+10}' | sudo tee /etc/default/kubelet"
       s.vm.provision :shell,
@@ -90,8 +98,8 @@ Vagrant.configure(2) do |config|
         #virtualbox__intnet: "k8s-net"
       s.vm.provider "virtualbox" do |v|
         v.name = "k8s-worker-#{i}"
-        v.cpus = 2
-        v.memory = "#{memory}"
+        v.cpus = $cpus
+        v.memory = $memory
         v.gui = false
         v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
         #v.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
