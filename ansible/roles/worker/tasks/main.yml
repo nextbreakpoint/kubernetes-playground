@@ -1,0 +1,44 @@
+---
+- name: Copy config to home directory
+  become: yes
+  copy:
+    src: /vagrant/admin.conf
+    dest: /home/vagrant/admin.conf
+    owner: vagrant
+    group: vagrant
+    mode: 0600
+  tags:
+    - k8s
+
+- name: Update environment
+  become: yes
+  lineinfile:
+    path: /home/vagrant/.bashrc
+    regexp: '^export KUBECONFIG='
+    line: 'export KUBECONFIG=/home/vagrant/admin.conf'
+    state: present
+  tags:
+    - k8s
+
+- name: Copy join script
+  become: yes
+  copy:
+    src: /vagrant/join.sh
+    dest: /home/vagrant/join.sh
+    owner: vagrant
+    group: vagrant
+    mode: 0700
+  tags:
+    - k8s
+
+- name: Check if Kubernetes CA exists
+  stat:
+    path: /etc/kubernetes/pki/ca.crt
+  register: kubernetes_ca
+
+- name: Join Kubernetes cluster
+  when: kubernetes_ca.stat.exists == false
+  become: yes
+  command: "sh /home/vagrant/join.sh"
+  tags:
+    - k8s

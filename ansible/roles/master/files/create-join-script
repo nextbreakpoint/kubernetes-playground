@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+
+MASTER=""
+
+for i in "$@"; do
+  case $i in
+    --master=*)
+      MASTER="${i#*=}"
+      shift
+      ;;
+    *)
+      MASTER+=("$1")
+      shift
+      ;;
+  esac
+done
+
+
+if [[ -z $MASTER ]]; then
+  echo "Missing required parameter --master"
+  exit 1
+fi
+
+echo "kubeadm join ${MASTER}:6443 --token $(kubeadm-token) --discovery-token-ca-cert-hash sha256:$(kubeadm-hash)" > /home/vagrant/join.sh

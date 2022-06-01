@@ -1,3 +1,0 @@
-#!/bin/bash
-
-kubeadm token list | grep "authentication" | awk '{ print $1 }'

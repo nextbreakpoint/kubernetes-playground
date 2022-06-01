@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -e
+
+COMMAND=""
+
+for i in "$@"; do
+  case $i in
+    --install)
+      COMMAND="INSTALL"
+      shift
+      ;;
+    --uninstall)
+      COMMAND="UNINSTALL"
+      shift
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [[ $COMMAND = "INSTALL" ]]; then
+  helm repo add projectcalico https://projectcalico.docs.tigera.io/charts
+
+  kubectl create ns tigera-operator
+
+  helm upgrade --install calico projectcalico/tigera-operator --version v3.23.1 -f /var/k8s/calico-values.yaml --namespace tigera-operator
+fi
+
+if [[ $COMMAND = "UNINSTALL" ]]; then
+  helm uninstall calico --namespace tigera-operator
+
+  kubectl delete ns tigera-operator
+
+  helm repo remove projectcalico
+fi

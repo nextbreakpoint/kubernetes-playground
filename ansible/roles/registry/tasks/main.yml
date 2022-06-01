@@ -1,0 +1,217 @@
+---
+- name: Create Docker Registry's data directory
+  when: "'k8s-worker-1' in ansible_hostname"
+  become: yes
+  file:
+    path: /volumes/docker-registry/data
+    state: directory
+  tags:
+    - k8s
+
+- name: Create Docker Registry's certs directory
+  when: "'k8s-worker-1' in ansible_hostname"
+  become: yes
+  file:
+    path: /volumes/docker-registry/certs
+    state: directory
+  tags:
+    - k8s
+
+- name: Create Docker Registry's auth directory
+  when: "'k8s-worker-1' in ansible_hostname"
+  become: yes
+  file:
+    path: /volumes/docker-registry/auth
+    state: directory
+  tags:
+    - k8s
+
+- name: Create Docker Registry's deployment script
+  when: "'k8s-worker-1' in ansible_hostname"
+  become: yes
+  copy:
+    content: |
+      ---
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: docker-registry
+      ---
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: docker-registry
+        namespace: docker-registry
+        labels:
+          app: docker-registry
+      spec:
+        storageClassName: hostpath
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+      ---
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: docker-registry
+        namespace: docker-registry
+        labels:
+          app: docker-registry
+      spec:
+        replicas: 1
+        strategy:
+          type: Recreate
+        selector:
+          matchLabels:
+            app: docker-registry
+        template:
+          metadata:
+            labels:
+              app: docker-registry
+          spec:
+            containers:
+            - name: docker-registry
+              image: registry:2.8.1
+              imagePullPolicy: IfNotPresent
+              ports:
+                - containerPort: 5000
+              volumeMounts:
+                - mountPath: /var/lib/registry
+                  subPath: data
+                  name: registry-data
+                - mountPath: /etc/certs
+                  subPath: certs
+                  name: registry-data
+                - mountPath: /etc/auth
+                  subPath: auth
+                  name: registry-data
+              env:
+                - name: REGISTRY_HTTP_ADDR
+                  value: "0.0.0.0:5000"
+                - name: REGISTRY_HTTP_TLS_CERTIFICATE
+                  value: "/etc/certs/docker-registry.crt"
+                - name: REGISTRY_HTTP_TLS_KEY
+                  value: "/etc/certs/docker-registry.key"
+                - name: REGISTRY_AUTH
+                  value: "htpasswd"
+                - name: REGISTRY_AUTH_HTPASSWD_REALM
+                  value: "Registry Realm"
+                - name: REGISTRY_AUTH_HTPASSWD_PATH
+                  value: "/etc/auth/htpasswd"
+            volumes:
+              - name: registry-data
+                persistentVolumeClaim:
+                  claimName: docker-registry
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                  - matchExpressions:
+                    - key: kubernetes.io/hostname
+                      operator: In
+                      values:
+                      - k8s-worker-1
+      ---
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: docker-registry
+        namespace: docker-registry
+        labels:
+          app: docker-registry
+      spec:
+        selector:
+          app: docker-registry
+        ports:
+          - port: 5000
+            targetPort: 5000
+            nodePort: 30000
+        type: NodePort
+      ---
+      apiVersion: v1
+      kind: PersistentVolume
+      metadata:
+        name: docker-registry
+        namespace: docker-registry
+        labels:
+          app: docker-registry
+      spec:
+        capacity:
+          storage: 20Gi
+        accessModes:
+        - ReadWriteOnce
+        persistentVolumeReclaimPolicy: Retain
+        storageClassName: hostpath
+        local:
+          path: /volumes/docker-registry
+        nodeAffinity:
+          required:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - k8s-worker-1
+    dest: /var/k8s/docker-registry.yaml
+  tags:
+    - k8s
+
+- name: Create Docker Registry's SSL config
+  when: "'k8s-worker-1' in ansible_hostname"
+  become: yes
+  copy:
+    content: |
+      [req]
+      distinguished_name = distinguished_name_req
+      [distinguished_name_req]
+      [v3_ca]
+      subjectAltName = IP:{{ network }}.10
+    dest: /var/k8s/docker-registry-ssl.conf
+  tags:
+    - k8s
+
+- name: Generate Docker Registry's authentication configuration
+  when: "'k8s-worker-1' in ansible_hostname"
+  become: yes
+  shell: |
+      htpasswd -Bbn test password > /volumes/docker-registry/auth/htpasswd
+  args:
+    executable: /bin/bash
+  tags:
+    - k8s
+
+- name: Generate Docker Registry's self-signed certificate
+  when: "'k8s-worker-1' in ansible_hostname"
+  become: yes
+  shell: |
+      openssl req -config /var/k8s/docker-registry-ssl.conf -extensions v3_ca -newkey rsa:4096 -nodes -sha256 -keyout /volumes/docker-registry/certs/docker-registry.key -x509 -days 365 -subj "/CN={{ network }}.10" -out /volumes/docker-registry/certs/docker-registry.crt
+  args:
+    executable: /bin/bash
+  tags:
+    - k8s
+
+- name: Export Docker Registry's self-signed certificate
+  when: "'k8s-worker-1' in ansible_hostname"
+  become: yes
+  shell: |
+      cp /volumes/docker-registry/certs/docker-registry.crt /vagrant
+  args:
+    executable: /bin/bash
+  tags:
+    - k8s
+
+- name: Copy Docker Registry's utility scripts
+  when: "'k8s-worker-1' in ansible_hostname"
+  become: yes
+  copy:
+    src: files/{{ item }}
+    dest: /usr/local/bin/{{ item }}
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - "docker-registry"
+  tags:
+    - k8s
