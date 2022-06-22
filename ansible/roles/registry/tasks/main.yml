@@ -215,3 +215,13 @@
     - "docker-registry"
   tags:
     - k8s
+
+- name: Install Docker Registry's self-signed certificate
+  become: yes
+  shell: |
+      mkdir -p /etc/docker/certs.d/{{ network }}.10:30000
+      cp /vagrant/docker-registry.crt /etc/docker/certs.d/{{ network }}.10:30000/ca.crt
+  args:
+    executable: /bin/bash
+  tags:
+    - k8s
