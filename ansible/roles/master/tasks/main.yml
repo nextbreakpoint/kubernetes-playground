@@ -124,14 +124,6 @@
   tags:
     - k8s
 
-- name: List Kubernetes nodes
-  become: yes
-  command: "kubectl --kubeconfig=/home/vagrant/admin.conf get nodes"
-  register: nodes
-  tags:
-    - k8s
-- debug: var=nodes.stdout_lines
-
 - name: Create Kubernetes Dashboard's RBAC script
   become: yes
   copy:
