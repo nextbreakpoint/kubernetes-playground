@@ -196,6 +196,13 @@
     value: 1
     state: present
 
+- name: Configure vm.max_map_count
+  become: yes
+  sysctl:
+    name: vm.max_map_count
+    value: 1048575
+    state: present
+
 - name: Configure net.bridge.bridge-nf-call-iptables
   become: yes
   sysctl:
