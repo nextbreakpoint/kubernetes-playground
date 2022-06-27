@@ -182,8 +182,14 @@
   tags:
     - k8s
 
-- name: Generate Docker Registry's self-signed certificate
+- name: Check if Docker Registry's self-signed certificate exists
   when: "'k8s-worker-1' in ansible_hostname"
+  stat:
+    path: /vagrant/docker-registry.crt
+  register: docker_registry_certificate
+
+- name: Generate Docker Registry's self-signed certificate
+  when: "'k8s-worker-1' in ansible_hostname and docker_registry_certificate.stat.exists == false"
   become: yes
   shell: |
       openssl req -config /var/k8s/docker-registry-ssl.conf -extensions v3_ca -newkey rsa:4096 -nodes -sha256 -keyout /volumes/docker-registry/certs/docker-registry.key -x509 -days 365 -subj "/CN={{ network }}.10" -out /volumes/docker-registry/certs/docker-registry.crt
